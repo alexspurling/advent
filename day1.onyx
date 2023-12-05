@@ -1,5 +1,5 @@
 use core {array, println, printf, tprintf}
-use core.string {index_of, as_str}
+use core.string {index_of, as_str, split}
 use core.conv {str_to_i64}
 use core.math {min}
 

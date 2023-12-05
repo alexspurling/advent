@@ -1,31 +1,6 @@
 use core {array}
 use core.intrinsics.types {type_is_struct}
 
-split :: (string: str, delimiter: u8) -> [] str {
-
-    tokens: [..] str;
-    array.init(&tokens);
-    defer array.free(&tokens);
-
-    tokenStart := 0;
-
-    numTokens: = 0;
-
-    for i: 0..string.length {
-        if string[i] == delimiter {
-            
-            token: str = string[tokenStart .. i]; 
-            array.push(&tokens, token);
-            tokenStart = i + 1;
-
-            numTokens += 1;
-        }
-    }
-
-    // We have to return a copy otherwise the memory for the array gets freed (not sure how the copy gets deallocated though)
-    return array.copy(tokens);
-}
-
 
 last_index_of :: (s: str, substr: str) -> i32 {
     while i := s.count - 1; i >= 0 {
