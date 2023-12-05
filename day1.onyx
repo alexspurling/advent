@@ -9,7 +9,7 @@ day1desc := "Calculate the calbration values for the trebuchet."
 
 
 solve_day_1_part_1 :: () -> i32 {
-    lines := split(day1part1, '\n');
+    lines := split(day1input, '\n');
 
     calibrationSum := 0;
 
@@ -47,8 +47,8 @@ find_num :: (string: str) -> ? u8 {
             return string[i];
         }
         for n: 0 .. nums.count {
-            if string[i .. nums[n].length] == nums[n] {
-                return '0' + cast(u8) n;
+            if string[i .. i + nums[n].length] == nums[n] {
+                return '1' + cast(u8) n;
             }
         }
     }
@@ -60,13 +60,14 @@ find_last_num :: (string: str) -> ? u8 {
     
     minIndex := string.length;
 
-    for i: range.{string.length, 0, -1} {
+    for i: range.{string.length - 1, 0, -1} {
         if isDigit(string[i]) {
             return string[i];
         }
         for n: 0 .. nums.count {
-            if string[i .. nums[n].length] == nums[n] {
-                return '0' + cast(u8) n;
+            // printf("comparing : {} with {} match: {}\n", string[i .. i + nums[n].length], nums[n], string[i .. i + nums[n].length] == nums[n]);
+            if string[i .. i + nums[n].length] == nums[n] {
+                return '1' + cast(u8) n;
             }
         }
     }
@@ -75,7 +76,7 @@ find_last_num :: (string: str) -> ? u8 {
 }
 
 solve_day_1_part_2 :: () -> i32 {
-    lines := split(day1part1, '\n');
+    lines := split(day1input, '\n');
     calibrationSum := 0;
 
     for line: lines {
@@ -87,13 +88,14 @@ solve_day_1_part_2 :: () -> i32 {
             calibrationNum := tprintf("{}{}", firstDigit->unwrap(), lastDigit->unwrap());
             // Add to the sum (coercing to u32)
             calibrationSum += ~~str_to_i64(calibrationNum);
-            // printf("{}, Calibration num: {}, cal int: {}, cal sum: {}\n", line, calibrationNum, calibrationNumInt, calibrationSum);
+            // printf("{}, Calibration num: {}, cal sum: {}\n", line, calibrationNum, calibrationSum);
         }
     }
+
     return calibrationSum;
 }
 
-day1part1 := """gtlbhbjgkrb5sixfivefivetwosix
+day1input := """gtlbhbjgkrb5sixfivefivetwosix
 ninesixrgxccvrqscbskgzxh6cpvpxsqnb6
 dxxzrlzkksfsffp4
 sbzvmddhnjtwollnjv33d2lbcscstqt

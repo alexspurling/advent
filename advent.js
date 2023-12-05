@@ -69,17 +69,28 @@ const openWindow = (day) => {
 
     document.getElementById("day").innerHTML = "Day " + day;
     
-    const description = get_onyx_str(wasmModule.instance.exports.describe(day));
+    const description = onyx_get_str(wasmModule.instance.exports.describe(day));
 
     document.getElementById("description").innerHTML = description;
+
+    document.getElementById("part1").onclick = () => {solve(day, 1)};
+    document.getElementById("part2").onclick = () => {solve(day, 2)};
+    
+    document.getElementById("resultsection").style.display = "none";
     
     const windowDiv = document.getElementById("window");
     windowDiv.style.opacity = 0.75;
 }
 
-const solve = (day) => {
-    const result = wasmModule.instance.exports.solve(day, 1);
-    console.log("Result: ", result);
+const solve = (day, part) => {
+    document.getElementById("resultsection").style.display = "block";
+    document.getElementById("result").innerHTML = "Working..."
+
+    setTimeout(() => {
+        const result = wasmModule.instance.exports.solve(day, part);
+        console.log("Result: ", result);
+        document.getElementById("result").innerHTML = result;
+    }, 0);
 }
 
 window.onload = function () {
