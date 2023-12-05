@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Advent of Code 2023</title>
+    <script src="advent.js"></script>
+</head>
+<style>
+    .container {
+        max-width: 1024px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .header {
+        padding: 0.1rem 2rem 0.1rem 2rem;
+    }
+    h1 {
+        font-size: 3rem;
+        font-weight: 100;
+        font-family: "Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+        color: whitesmoke;
+    }
+    h2 {
+        font-weight: 100;
+    }
+    .calendar {
+        position: relative;
+    }
+    .window {
+        position: absolute;
+        font-size: 3.2rem;
+        font-weight: 100;
+        font-family: "Luminari";
+        color: whitesmoke;
+        cursor: pointer;
+        width: 60px;
+        text-align: center;
+        opacity: 0;
+        transition: all 1s ease-out;
+    }
+    .window:hover {
+        opacity: 1;
+        transition: all 0.5s ease-in;
+    }
+    body {
+        background-color: black;
+        font-family: "Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    }
+
+    #window {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        opacity: 0;
+        background-color: rgb(92, 15, 15);
+        border: 3px solid rgb(117, 9, 9);
+        border-radius: 5px;
+        padding: 0 30px 30px 30px;
+        color: whitesmoke;
+        max-width: 300px;
+    }
+
+    a {
+        color: #009900;
+    }
+    a:hover {
+        color: #99ff99;
+    }
+
+</style>
+<body class="container">
+    <div class="header">
+        <h1>Advent of Code 2023</h1>
+    </div>
+    <div class="calendar">
+        <img src="calendar.png">
+        <div class="window" style="top: 360px; left: 400px" onmouseenter="openWindow(1)">1</div>
+        <div class="window" style="top: 740px; left: 430px" onmouseenter="openWindow(2)">2</div>
+        <div class="window" style="top: 560px; left: 550px" onmouseenter="openWindow(3)">3</div>
+        <div class="window" style="top: 285px; left: 540px" onmouseenter="openWindow(4)">4</div>
+        <div id="window">
+            <h2 id="day">Day 1</h2>
+            <p id="description">Calculate the calbration values for the trebuchet.</p>
+            <a href="#" id="part1">Part 1</a>&nbsp;<a href="#" id="part2">Part 2</a>
+        </div>
+    </div>
+</body>
+</html>

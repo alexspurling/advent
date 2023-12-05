@@ -1,0 +1,34 @@
+use core {println, printf}
+
+#load "./day1.onyx"
+
+#export "_initialize" _initialize
+_initialize :: () {
+    use runtime;
+    runtime.__runtime_initialize();
+    context.thread_id = 0;
+}
+
+#export "describe" describe
+describe :: (day: i32) -> &str {
+    switch day {
+        case 1 do return &day1desc;
+    }
+}
+
+
+DayPart :: struct {day, part: i32;};
+#operator == (d1, d2: DayPart) => d1.day == d2.day && d1.part == d2.part;
+
+
+#export "solve" solve
+solve :: (day: i32, part: i32) -> i32 {
+    switch DayPart.{day, part} {
+        case .{1, 1} do return solve_day_1_part_1();
+        case .{1, 2} do return solve_day_1_part_2();
+    }
+}
+
+main :: () {
+    println(solve(1, 1));
+}
