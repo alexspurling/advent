@@ -1,8 +1,9 @@
 use core {array, println, printf, tprintf}
 use core.string {index_of, as_str, split, split_iter}
-use core.iter {every}
+use core.iter
+use core.iter {fold}
 use core.conv {str_to_i64}
-use core.math {min}
+use core.math
 
 day2desc := "Calculate which games would have been possible."
 
@@ -30,12 +31,12 @@ count_valid :: (count: str) -> bool {
 
 
 draw_valid :: (draw: str) -> bool {
-    return split_iter(draw, ", ") |> every((count) => count_valid(count));
+    return split_iter(draw, ", ") |> iter.every((count) => count_valid(count));
 }
 
 
 solve_day_2_part_1 :: () -> i32 {
-    
+
     lines := split(day2input, '\n');
 
     gameIdSum := 0;
@@ -53,7 +54,7 @@ solve_day_2_part_1 :: () -> i32 {
         draws := split_iter(allDraws, "; ");
 
         valid := true;
-        for draw: draws {     
+        for draw: draws {
             if !draw_valid(draw) {
                 valid = false;
                 break;
@@ -68,8 +69,71 @@ solve_day_2_part_1 :: () -> i32 {
     return gameIdSum;
 }
 
+Draw :: struct {
+    red: i32;
+    green: i32;
+    blue: i32;
+}
+
+toDraw :: (draw: str) -> Draw {
+    colourCounts := split_iter(draw, ", ");
+
+    red := 0;
+    green := 0;
+    blue := 0;
+
+    for cc: colourCounts {
+        count_colour := split(cc, ' ');
+        count := cast(i32) str_to_i64(count_colour[0]);
+        colour := count_colour[1];
+
+        switch colour {
+            case "red" do red = count;
+            case "green" do green = count;
+            case "blue" do blue = count;
+        }
+    }
+
+    return Draw.{red, green, blue};
+}
+
+maxi :: (a: i32, b: i32) -> i32 {
+    return math.max(a, b);
+}
+
 solve_day_2_part_2 :: () -> i32 {
-    return 0;
+
+    powerSum := 0;
+
+    for line: iter.as_iter(split(day2input, '\n')) {
+        drawIdx := index_of(line, ": ");
+
+        if drawIdx == -1 {
+            continue;
+        }
+
+        allDrawsStr := line[drawIdx + 2 .. line.count];
+        allDrawsArr := split_iter(allDrawsStr, "; ");
+        draws := iter.map(allDrawsArr, toDraw);
+
+        println(allDrawsStr);
+
+        // for all the draws in the game, get the max red, green and blue counts
+        max_draw := iter.fold(draws, Draw.{}, (d: Draw, a: Draw) => {
+            return Draw.{
+                red = math.max(d.red, a.red),
+                green = math.max(d.green, a.green),
+                blue = math.max(d.blue, a.blue)
+            };
+        });
+
+        printf("Max draw: {}\n", max_draw);
+
+        power := max_draw.red * max_draw.green * max_draw.blue;
+        powerSum += power;
+    }
+
+    return powerSum;
 }
 
 day2input := """Game 1: 1 green, 6 red, 4 blue; 2 blue, 6 green, 7 red; 3 red, 4 blue, 6 green; 3 green; 3 blue, 2 green, 1 red
@@ -171,4 +235,5 @@ Game 96: 1 green, 6 red; 1 red; 12 red, 1 green; 6 red, 1 blue
 Game 97: 1 red, 9 blue, 8 green; 2 green, 6 blue, 1 red; 6 green, 1 blue
 Game 98: 9 blue, 7 green, 8 red; 6 red, 11 blue, 4 green; 11 green, 9 blue, 15 red; 11 red, 6 blue, 16 green
 Game 99: 2 blue, 1 red, 9 green; 8 red, 1 blue, 1 green; 2 red, 7 green, 8 blue; 1 red, 5 green, 7 blue; 7 blue, 10 green, 9 red; 1 green, 1 blue, 1 red
-Game 100: 3 blue, 6 red, 9 green; 4 red, 3 green; 4 green, 16 red, 1 blue; 14 blue, 1 green"""
+Game 100: 3 blue, 6 red, 9 green; 4 red, 3 green; 4 green, 16 red, 1 blue; 14 blue, 1 green
+""";
