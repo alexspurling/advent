@@ -49,11 +49,11 @@ const loadWasm = async () => {
 
 function stringToByteArray(str) {
     const byteArray = new Uint8Array(str.length);
-  
+
     for (let i = 0; i < str.length; i++) {
       byteArray[i] = str.charCodeAt(i);
     }
-  
+
     return byteArray;
 }
 
@@ -65,21 +65,23 @@ const openWindow = (day) => {
     // const inputPointer = wasmInstance.exports.__alloc(inputByteArray.length);
     // const wasmMemory = new Uint8Array(wasmModule.instance.exports.memory);
     // wasmMemory.set(inputByteArray, inputPointer);
-    
+
 
     document.getElementById("day").innerHTML = "Day " + day;
-    
+
     const description = onyx_get_str(wasmModule.instance.exports.describe(day));
 
     document.getElementById("description").innerHTML = description;
 
     document.getElementById("part1").onclick = () => {solve(day, 1)};
     document.getElementById("part2").onclick = () => {solve(day, 2)};
-    
+
     document.getElementById("resultsection").style.display = "none";
-    
+
     const windowDiv = document.getElementById("window");
     windowDiv.style.opacity = 0.75;
+
+    return false;
 }
 
 const solve = (day, part) => {
@@ -91,6 +93,8 @@ const solve = (day, part) => {
         console.log("Result: ", result);
         document.getElementById("result").innerHTML = result;
     }, 0);
+
+    return false;
 }
 
 window.onload = function () {
