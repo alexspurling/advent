@@ -97,10 +97,6 @@ toDraw :: (draw: str) -> Draw {
     return Draw.{red, green, blue};
 }
 
-maxi :: (a: i32, b: i32) -> i32 {
-    return math.max(a, b);
-}
-
 solve_day_2_part_2 :: () -> i32 {
 
     powerSum := 0;

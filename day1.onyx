@@ -2,10 +2,11 @@ use core {array, println, printf, tprintf}
 use core.string {index_of, as_str, split}
 use core.conv {str_to_i64}
 use core.math {min}
+use strings
+
 
 day1desc := "Calculate the calbration values for the trebuchet."
 
-#load "./strings.onyx"
 
 
 solve_day_1_part_1 :: () -> i32 {
@@ -13,13 +14,9 @@ solve_day_1_part_1 :: () -> i32 {
 
     calibrationSum := 0;
 
-    isDigit :: [c] (
-        c >= '0' && c <= '9'
-    )
-
     for line: lines {
-        firstDigit := array.find(line, isDigit);
-        lastDigit := find_last(line, isDigit);
+        firstDigit := array.find(line, strings.isDigitM);
+        lastDigit := strings.find_last(line, strings.isDigitM);
         // printf("{}, digits: {}, {}\n", line, firstDigit, lastDigit);
         if firstDigit >= 0 {
             // Get the two digits and concatenate them to give a 2-digit number
@@ -32,18 +29,14 @@ solve_day_1_part_1 :: () -> i32 {
     return calibrationSum;
 }
 
-isDigit :: (c: u8) -> bool {
-    return c >= '0' && c <= '9';
-}
-
 nums :: str.["one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
 
 find_num :: (string: str) -> ? u8 {
-    
+
     minIndex := string.length;
 
     for i: 0 .. string.length {
-        if isDigit(string[i]) {
+        if strings.isDigit(string[i]) {
             return string[i];
         }
         for n: 0 .. nums.count {
@@ -57,11 +50,11 @@ find_num :: (string: str) -> ? u8 {
 }
 
 find_last_num :: (string: str) -> ? u8 {
-    
+
     minIndex := string.length;
 
     for i: range.{string.length - 1, 0, -1} {
-        if isDigit(string[i]) {
+        if strings.isDigit(string[i]) {
             return string[i];
         }
         for n: 0 .. nums.count {

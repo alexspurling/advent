@@ -1,11 +1,26 @@
+package strings
+
 use core {array}
 use core.intrinsics.types {type_is_struct}
+use core.slice
 
+
+isDigit :: (c: u8) -> bool {
+    return c >= '0' && c <= '9';
+}
+
+isDigitM :: [c] (
+    c >= '0' && c <= '9'
+)
+
+// Returns true if the character is not a letter or digit
+isSymbol :: (c: u8) -> bool {
+    return slice.find("#$%&*+-/=@", c) >= 0;
+}
 
 last_index_of :: (s: str, substr: str) -> i32 {
     while i := s.count - 1; i >= 0 {
         defer i -= 1;
-
         while j := 0; j < substr.count {
             if s[i + j] != substr[j] {
                 continue continue;
