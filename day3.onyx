@@ -1,4 +1,4 @@
-use core {println, printf, tprintf}
+use core {println, printf}
 use core.string {split}
 use core.iter
 use core.conv {str_to_i64}
@@ -27,13 +27,15 @@ solve_day_3_part_1 :: () -> i32 {
     partNumbers: [..] i32;
 
     for y: 0 .. lines.count {
-        theNum := "";
+        partStartIdx := -1;
         numIsPartNumber := false;
 
         for x: 0 .. lines[y].count {
             c := lines[y][x];
             if strings.isDigit(c) {
-                theNum = tprintf("{}{}", theNum, c);
+                if partStartIdx == -1 {
+                    partStartIdx = x;
+                }
                 // Check if there is a symbol in the surrounding 8 cells
                 for cell: surrounding_cells(x, y) {
                     if cell.x >= 0 && cell.y >= 0 && cell.x < lines[y].count && cell.y < lines.count {
@@ -42,21 +44,21 @@ solve_day_3_part_1 :: () -> i32 {
                         }
                     }
                 }
-            } elseif theNum != "" {
+            } elseif partStartIdx != -1 {
                 // We found something other than a digit
                 if numIsPartNumber {
-                    partNumbers << ~~str_to_i64(theNum);
+                    partNumbers << ~~str_to_i64(lines[y][partStartIdx .. x]);
                 }
-                theNum = "";
+                partStartIdx = -1;
                 numIsPartNumber = false;
             }
         }
-        if theNum != "" {
+        if partStartIdx != -1 {
             // We got to the end of the line
             if numIsPartNumber {
-                partNumbers << ~~str_to_i64(theNum);
+                partNumbers << ~~str_to_i64(lines[y][partStartIdx .. lines[y].count]);
             }
-            theNum = "";
+            partStartIdx = -1;
             numIsPartNumber = false;
         }
     }
@@ -91,22 +93,24 @@ solve_day_3_part_2 :: () -> i32 {
     parts: [..] Part;
 
     for y: 0 .. lines.count {
-        theNum := "";
+        partStartIdx := -1;
 
         for x: 0 .. lines[y].count {
             c := lines[y][x];
             if strings.isDigit(c) {
-                theNum = tprintf("{}{}", theNum, c);
-            } elseif theNum != "" {
+                if partStartIdx == -1 {
+                    partStartIdx = x;
+                }
+            } elseif partStartIdx != -1 {
                 // We found something other than a digit
-                parts << Part.{pos = Cell.{x - theNum.count, y}, num = ~~str_to_i64(theNum), len = theNum.count};
-                theNum = "";
+                parts << Part.{pos = Cell.{partStartIdx, y}, num = ~~str_to_i64(lines[y][partStartIdx .. x]), len = x - partStartIdx};
+                partStartIdx = -1;
             }
         }
-        if theNum != "" {
+        if partStartIdx != -1 {
             // We got to the end of the line
-            parts << Part.{pos = Cell.{lines[y].count - theNum.count, y}, num = ~~str_to_i64(theNum), len = theNum.count};
-            theNum = "";
+            parts << Part.{pos = Cell.{partStartIdx, y}, num = ~~str_to_i64(lines[y][partStartIdx .. lines[y].count]), len = lines[y].count - partStartIdx};
+            partStartIdx = -1;
         }
     }
 
