@@ -1,19 +1,184 @@
+use core {println, printf, range}
+use core.string {split, split_iter}
+use core.iter
+use core.conv {parse_int}
+use core.math
+use core.array
 
 day5desc := "Calculate the location to plant new seeds on Island Island island."
 
-solve_day_4_part_1 :: () -> i32 {
-    return 0;
+
+MappingRange :: struct {
+    destId: i64;
+    srcId: i64;
+    len: i64;
 }
 
 
-solve_day_4_part_2 :: () -> i32 {
-    return 0;
+Mapping :: struct {
+    ranges: [] MappingRange;
 }
+
+parseMap :: (mappings: str) -> Mapping {
+    lines := split_iter(mappings, '\n');
+    ranges := iter.map(lines, (l) => {
+        nums := split(l, ' ');
+        return MappingRange.{~~parse_int(nums[0]), ~~parse_int(nums[1]), ~~parse_int(nums[2])};
+    }) |> iter.to_array();
+    return Mapping.{ranges};
+}
+
+mapTo :: (mapping: Mapping, item: i64) -> i64 {
+
+    for range: mapping.ranges {
+        if range.srcId <= item && item < range.srcId + range.len {
+            return item - range.srcId + range.destId;
+        }
+    }
+    return item;
+}
+
+MAX_INT64 :: 9223372036854775807;
+
+
+solve_day_5_part_1 :: () -> i32 {
+
+    seedsArr := split(seeds, ' ') |> iter.as_iter() |> iter.map((s) => parse_int(s)) |> iter.to_array();
+
+    seedToSoilMap := parseMap(seedToSoil);
+    soilToFertilizerMap := parseMap(soilToFertilizer);
+    fertilizerToWaterMap := parseMap(fertilizerToWater);
+    waterToLightMap := parseMap(waterToLight);
+    lightToTemperatureMap := parseMap(lightToTemperature);
+    temperatureToHumidityMap := parseMap(temperatureToHumidity);
+    humidityToLocationMap := parseMap(humidityToLocation);
+
+    minLocation := MAX_INT64;
+    for seed: seedsArr {
+        soil := mapTo(seedToSoilMap, seed);
+        fertilizer := mapTo(soilToFertilizerMap, soil);
+        water := mapTo(fertilizerToWaterMap, fertilizer);
+        light := mapTo(waterToLightMap, water);
+        temperature := mapTo(lightToTemperatureMap, light);
+        humidity := mapTo(temperatureToHumidityMap, temperature);
+        location := mapTo(humidityToLocationMap, humidity);
+
+        minLocation = math.min(minLocation, location);
+    }
+
+    return ~~minLocation;
+}
+
+
+SeedRange :: struct {
+    seedId: i64;
+    len: i32;
+}
+
+
+toSeedRanges :: (seedsAndLens: [] str) -> [] SeedRange {
+    ranges: [..] SeedRange;
+    array.init(&ranges);
+    // defer array.free(&ranges); // can't use this as it frees the array memory upon returning
+
+    for i: range.{0, seedsAndLens.count, 2} {
+        seedId := parse_int(seedsAndLens[i]);
+        len := cast(i32) parse_int(seedsAndLens[i + 1]);
+        ranges << SeedRange.{seedId, len};
+    }
+
+    return ranges;
+}
+
+
+solve_day_5_part_2 :: () -> i32 {
+
+    seedRanges := split(seeds, ' ') |> toSeedRanges();
+    seedToSoilMap := parseMap(seedToSoil);
+    soilToFertilizerMap := parseMap(soilToFertilizer);
+    fertilizerToWaterMap := parseMap(fertilizerToWater);
+    waterToLightMap := parseMap(waterToLight);
+    lightToTemperatureMap := parseMap(lightToTemperature);
+    temperatureToHumidityMap := parseMap(temperatureToHumidity);
+    humidityToLocationMap := parseMap(humidityToLocation);
+
+    // seedRanges := split(exampleSeeds, ' ') |> toSeedRanges();
+    // seedToSoilMap := parseMap(seed_to_soil);
+    // soilToFertilizerMap := parseMap(soil_to_fertilizer);
+    // fertilizerToWaterMap := parseMap(fertilizer_to_water);
+    // waterToLightMap := parseMap(water_to_light);
+    // lightToTemperatureMap := parseMap(light_to_temperature);
+    // temperatureToHumidityMap := parseMap(temperature_to_humidity);
+    // humidityToLocationMap := parseMap(humidity_to_location);
+
+    printf("Seed ranges: {}\n", seedRanges);
+
+    srNum: i64 = 0;
+
+    minLocation := MAX_INT64;
+    for seedRange: seedRanges {
+        seed := seedRange.seedId;
+        upperBound := seedRange.seedId + ~~seedRange.len;
+        printf("Got seed range: {}\n", seedRange);
+        while seed < upperBound {
+            soil := mapTo(seedToSoilMap, seed);
+            fertilizer := mapTo(soilToFertilizerMap, soil);
+            water := mapTo(fertilizerToWaterMap, fertilizer);
+            light := mapTo(waterToLightMap, water);
+            temperature := mapTo(lightToTemperatureMap, light);
+            humidity := mapTo(temperatureToHumidityMap, temperature);
+            location := mapTo(humidityToLocationMap, humidity);
+
+            if location < minLocation {
+                minLocation = location;
+                printf("New min location: {}\n", minLocation);
+            }
+
+            if seed % 1000000 == 0 {
+                totalIterations := seedRanges.count * seedRange.len;
+                currentIteration := srNum * ~~seedRange.len + (seed - seedRange.seedId);
+                progress := cast(f64) currentIteration / cast(f64) totalIterations * 100;
+                printf("Progress: {}%\n", progress);
+            }
+            seed += 1;
+        }
+        srNum += 1;
+    }
+
+    return ~~minLocation;
+}
+
+exampleSeeds := "79 14 55 13";
+
+seed_to_soil := """50 98 2
+52 50 48""";
+
+soil_to_fertilizer := """0 15 37
+37 52 2
+39 0 15""";
+
+fertilizer_to_water := """49 53 8
+0 11 42
+42 0 7
+57 7 4""";
+
+water_to_light := """88 18 7
+18 25 70""";
+
+light_to_temperature := """45 77 23
+81 45 19
+68 64 13""";
+
+temperature_to_humidity := """0 69 1
+1 0 69""";
+
+humidity_to_location := """60 56 37
+56 93 4""";
 
 
 seeds := "1514493331 295250933 3793791524 105394212 828589016 654882197 658370118 49359719 4055197159 59237418 314462259 268880047 2249227634 74967914 2370414906 38444198 3291001718 85800943 2102534948 5923540"
 
-soilToSeeds := """3352941879 1247490906 129850502
+seedToSoil := """3352941879 1247490906 129850502
 1738919961 2189748071 56658550
 1795578511 292133467 518088747
 1519757661 1666834550 130335907
