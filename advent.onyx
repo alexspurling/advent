@@ -24,6 +24,8 @@ describe :: (day: i32) -> &str {
     }
 }
 
+progress :: (p: f64) -> void  #foreign "host" "progress" ---
+
 
 DayPart :: struct {day, part: i32;};
 #operator == (d1, d2: DayPart) => d1.day == d2.day && d1.part == d2.part;

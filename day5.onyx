@@ -90,6 +90,35 @@ toSeedRanges :: (seedsAndLens: [] str) -> [] SeedRange {
     return ranges;
 }
 
+// There's currently a bug that means we can't use nested if expressions so breaking this out into a multiline if
+compareRanges :: (r1: MappingRange, r2: MappingRange) -> i32 {
+    if r1.destId == r2.destId {
+        return 0;
+    } elseif r1.destId < r2.destId {
+        return -1;
+    }
+    return 1;
+}
+
+mapFrom :: (mapping: Mapping, item: i64) -> i64 {
+    for range: mapping.ranges {
+        if range.destId <= item && item < range.destId + range.len {
+            return item - range.destId + range.srcId;
+        }
+    }
+    return item;
+}
+
+
+seedInRange :: (seedRanges: [] SeedRange, seed: i64) -> bool {
+    for seedRange: seedRanges {
+        if seedRange.seedId <= seed && seed < seedRange.seedId + ~~seedRange.len {
+            return true;
+        }
+    }
+    return false;
+}
+
 
 solve_day_5_part_2 :: () -> i32 {
 
@@ -111,41 +140,33 @@ solve_day_5_part_2 :: () -> i32 {
     // temperatureToHumidityMap := parseMap(temperature_to_humidity);
     // humidityToLocationMap := parseMap(humidity_to_location);
 
-    printf("Seed ranges: {}\n", seedRanges);
+    location : i64 = 0;
 
-    srNum: i64 = 0;
+    while true {
+        // Search backwards for things
 
-    minLocation := MAX_INT64;
-    for seedRange: seedRanges {
-        seed := seedRange.seedId;
-        upperBound := seedRange.seedId + ~~seedRange.len;
-        printf("Got seed range: {}\n", seedRange);
-        while seed < upperBound {
-            soil := mapTo(seedToSoilMap, seed);
-            fertilizer := mapTo(soilToFertilizerMap, soil);
-            water := mapTo(fertilizerToWaterMap, fertilizer);
-            light := mapTo(waterToLightMap, water);
-            temperature := mapTo(lightToTemperatureMap, light);
-            humidity := mapTo(temperatureToHumidityMap, temperature);
-            location := mapTo(humidityToLocationMap, humidity);
+        humidity := mapFrom(humidityToLocationMap, location);
+        temperature := mapFrom(temperatureToHumidityMap, humidity);
+        light := mapFrom(lightToTemperatureMap, temperature);
+        water := mapFrom(waterToLightMap, light);
+        fertilizer := mapFrom(fertilizerToWaterMap, water);
+        soil := mapFrom(soilToFertilizerMap, fertilizer);
+        seed := mapFrom(seedToSoilMap, soil);
 
-            if location < minLocation {
-                minLocation = location;
-                printf("New min location: {}\n", minLocation);
-            }
+        // printf("location: {}, humidity: {}, temperature: {}, light: {}, water: {}, fertilizer: {}, soil: {}, seed: {}\n", location, humidity, temperature, light, water, fertilizer, soil, seed);
 
-            if seed % 1000000 == 0 {
-                totalIterations := seedRanges.count * seedRange.len;
-                currentIteration := srNum * ~~seedRange.len + (seed - seedRange.seedId);
-                progress := cast(f64) currentIteration / cast(f64) totalIterations * 100;
-                printf("Progress: {}%\n", progress);
-            }
-            seed += 1;
+        if seedInRange(seedRanges, seed) {
+            return ~~location;
         }
-        srNum += 1;
+
+        if location % 1000000 == 0 {
+            progress(cast(f64) location / 7873084.0 * 100.0);
+        }
+
+        location += 1;
     }
 
-    return ~~minLocation;
+    return 0;
 }
 
 exampleSeeds := "79 14 55 13";
@@ -341,8 +362,7 @@ lightToTemperature := """2054128675 422374783 216418447
 3569146389 2498669254 68188379
 2613254422 4088834560 206132736""";
 
-temperatureToHumidity := """
-2032423062 2486277941 26281270
+temperatureToHumidity := """2032423062 2486277941 26281270
 333062067 2316624216 6051173
 1716048249 1385455997 91409968
 460397469 2512559211 69041956
@@ -371,8 +391,7 @@ temperatureToHumidity := """
 1326673997 2452133400 34144541
 3805665741 4211799370 83167926""";
 
-humidityToLocation := """
-3928575650 3147563455 98804874
+humidityToLocation := """3928575650 3147563455 98804874
 2357899446 2418187254 26586982
 449562184 2261875136 59054833
 308294839 60287808 141267345

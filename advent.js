@@ -28,6 +28,10 @@ const importWasmModule = async (wasmModuleUrl) => {
         host: {
             print_str: onyx_print_str,
             time: Date.now,
+            progress: (p) => {
+                console.log("Progress: ", p);
+                document.getElementById("result").innerHTML = "Progress: " + p + "%";
+            }
         }
     };
 
