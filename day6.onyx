@@ -1,0 +1,13 @@
+
+day6desc := "Calculate the location to plant new seeds on Island Island island."
+
+solve_day_6_part_1 :: () -> i32 {
+    return 0;
+}
+
+solve_day_6_part_2 :: () -> i32 {
+    return 0;
+}
+
+day6input := """Time:        44     70     70     80
+Distance:   283   1134   1134   1491""";
