@@ -72,6 +72,12 @@
     a:hover {
         color: #99ff99;
     }
+    #canvas {
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        pointer-events: none;
+    }
 
 </style>
 <body class="container">
@@ -95,6 +101,7 @@
             <p><a href="#" id="part1">Part 1</a>&nbsp;<a href="#" id="part2">Part 2</a></p>
             <p id="resultsection">Result: <span id="result"></span></p>
         </div>
+        <canvas id="canvas" width="1024" height="1024"></canvas>
     </div>
 </body>
 </html>
