@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Advent of Code 2023</title>
     <script src="advent.js"></script>
+    <link rel="icon" type="image/png" href="favicon.png">
 </head>
 <style>
     .container {
@@ -38,12 +39,14 @@
         cursor: pointer;
         width: 60px;
         text-align: center;
-        opacity: 0;
+        opacity: 0.6;
         transition: all 1s ease-out;
+        text-shadow: 1px 1px 5px #000000;
     }
     .window:hover {
         opacity: 1;
-        transition: all 0.5s ease-in;
+        transition: all 0.25s ease-in;
+        text-shadow: 1px 1px 5px #000000, 0 0 10px #ffee00;
     }
     body {
         background-color: black;
@@ -78,11 +81,13 @@
     <div class="calendar">
         <div class="blockselect">
             <img src="calendar.png">
-            <div class="window" style="top: 360px; left: 400px" onmouseenter="openWindow(1)">1</div>
-            <div class="window" style="top: 740px; left: 430px" onmouseenter="openWindow(2)">2</div>
-            <div class="window" style="top: 560px; left: 550px" onmouseenter="openWindow(3)">3</div>
-            <div class="window" style="top: 285px; left: 540px" onmouseenter="openWindow(4)">4</div>
-            <div class="window" style="top: 795px; left: 325px" onmouseenter="openWindow(5)">5</div>
+            <div class="window" style="top: 500px; left: 375px" onmouseenter="openWindow(1)">1</div>
+            <div class="window" style="top: 225px; left: 410px" onmouseenter="openWindow(2)">2</div>
+            <div class="window" style="top: 543px; left: 618px" onmouseenter="openWindow(3)">3</div>
+            <div class="window" style="top: 270px; left: 555px" onmouseenter="openWindow(4)">4</div>
+            <div class="window" style="top: 360px; left: 395px" onmouseenter="openWindow(5)">5</div>
+            <div class="window" style="top: 660px; left: 370px" onmouseenter="openWindow(6)">6</div>
+            <div class="window" style="top: 684px; left: 650px" onmouseenter="openWindow(7)">7</div>
         </div>
         <div id="window">
             <h2 id="day">Day 1</h2>
