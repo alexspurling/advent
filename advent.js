@@ -2,7 +2,6 @@ let worker = undefined;
 
 window.onload = function () {
     worker = new Worker("worker.js");
-
     worker.onmessage = (e) => {
         if (e.data.msg == "description") {
             document.getElementById("description").innerHTML = e.data.value;
@@ -15,8 +14,6 @@ window.onload = function () {
             console.log("Received unexpected result from worker", e);
         }
     };
-
-    console.log("Worker is", worker);
 }
 
 const openWindow = (day) => {
