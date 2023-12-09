@@ -159,7 +159,7 @@ solve_day_5_part_2 :: () -> i32 {
             return ~~location;
         }
 
-        if location % 1000000 == 0 {
+        if location % 100000 == 0 {
             progress(cast(f64) location / 7873084.0 * 100.0);
         }
 

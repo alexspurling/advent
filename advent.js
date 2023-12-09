@@ -1,86 +1,32 @@
-let wasmInstance = undefined;
+let worker = undefined;
 
-const onyx_decode_text = (ptr, len) => {
-    let v = new DataView(wasmInstance.exports.memory.buffer);
+window.onload = function () {
+    worker = new Worker("worker.js");
 
-    let s = "";
-    for (let i = 0; i < len; i++) {
-        s += String.fromCharCode(v.getUint8(ptr + i));
-    }
-
-    return s;
-}
-
-const onyx_print_str = (ptr, len) => {
-    console.log(onyx_decode_text(ptr, len));
-}
-
-const onyx_get_str = (str) => {
-    let view = new DataView(wasmInstance.exports.memory.buffer);
-    let strptr = view.getUint32(str, true);
-    let strlen = view.getUint32(str + 4, true);
-
-    return onyx_decode_text(strptr, strlen);
-}
-
-const importWasmModule = async (wasmModuleUrl) => {
-    let importObject = {
-        host: {
-            print_str: onyx_print_str,
-            time: Date.now,
-            progress: (p) => {
-                console.log("Progress: ", p);
-                document.getElementById("result").innerHTML = "Progress: " + p + "%";
-            }
+    worker.onmessage = (e) => {
+        if (e.data.msg == "description") {
+            document.getElementById("description").innerHTML = e.data.value;
+        } else if (e.data.msg == "progress") {
+            const progress = e.data.value;
+            document.getElementById("result").innerHTML = "(progress: " + progress.toFixed(1) + "%)";
+        } else if (e.data.msg == "result") {
+            document.getElementById("result").innerHTML = e.data.value;
+        } else {
+            console.log("Received unexpected result from worker", e);
         }
     };
 
-    return await WebAssembly.instantiateStreaming(
-        fetch(wasmModuleUrl),
-        importObject
-    );
-}
-
-const loadWasm = async () => {
-    console.log("Loading wasm module");
-    wasmModule = await importWasmModule("./advent.wasm");
-    console.log("Loaded wasm module", wasmModule);
-
-    // Initialise the Onyx runtime - this is needed to set up heap space and other things
-    wasmModule.instance.exports._initialize();
-    wasmInstance = wasmModule.instance;
-}
-
-function stringToByteArray(str) {
-    const byteArray = new Uint8Array(str.length);
-
-    for (let i = 0; i < str.length; i++) {
-      byteArray[i] = str.charCodeAt(i);
-    }
-
-    return byteArray;
+    console.log("Worker is", worker);
 }
 
 const openWindow = (day) => {
-    // console.log("You opened window ", windowNum);
-
-    // Create a Uint8Array to give us access to Wasm Memory
-    // const inputByteArray = stringToByteArray("Hello world");
-    // const inputPointer = wasmInstance.exports.__alloc(inputByteArray.length);
-    // const wasmMemory = new Uint8Array(wasmModule.instance.exports.memory);
-    // wasmMemory.set(inputByteArray, inputPointer);
-
-
     document.getElementById("day").innerHTML = "Day " + day;
-
-    const description = onyx_get_str(wasmModule.instance.exports.describe(day));
-
-    document.getElementById("description").innerHTML = description;
-
-    document.getElementById("part1").onclick = () => {solve(day, 1)};
-    document.getElementById("part2").onclick = () => {solve(day, 2)};
+    document.getElementById("part1").onclick = () => {return solve(day, 1)};
+    document.getElementById("part2").onclick = () => {return solve(day, 2)};
 
     document.getElementById("resultsection").style.display = "none";
+
+    worker.postMessage({msg: "description", params: [day]});
 
     const windowDiv = document.getElementById("window");
     windowDiv.style.opacity = 0.75;
@@ -92,15 +38,7 @@ const solve = (day, part) => {
     document.getElementById("resultsection").style.display = "block";
     document.getElementById("result").innerHTML = "Working..."
 
-    setTimeout(() => {
-        const result = wasmModule.instance.exports.solve(day, part);
-        console.log("Result: ", result);
-        document.getElementById("result").innerHTML = result;
-    }, 0);
+    worker.postMessage({msg: "solve", params: [day, part]});
 
     return false;
-}
-
-window.onload = function () {
-    loadWasm();
 }
