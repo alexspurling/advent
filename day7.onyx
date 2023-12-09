@@ -1,12 +1,233 @@
+use core.iter
+use core.string {split, split_iter, index_of}
+use core {println, printf}
+use core.conv {parse_int}
+use core.map
+use core.array
+use core.slice
+
 
 day7desc := "Calculate the total winnings in the Camel Cards game."
 
-solve_day_7_part_1 :: () -> i32 {
+HandInput :: struct {
+    hand: str;
+    bid: i32;
+}
+
+HandType :: enum {
+    HighCard;
+    OnePair;
+    TwoPair;
+    ThreeOfAKind;
+    FullHouse;
+    FourOfAKind;
+    FiveOfAKind;
+}
+
+Hand :: struct {
+    hand: str;
+    bid: i32;
+    type: HandType;
+}
+
+toHandInput :: (line: str) -> HandInput {
+    parts := split(line, ' ');
+    return HandInput.{parts[0], ~~parse_int(parts[1])};
+}
+
+groupChars :: (hand: str) -> Map(u8, u32) {
+    chars := map.make(u8, u32);
+
+    for c: hand {
+        map.put(&chars, c, map.get(&chars, c)->value_or(0) + 1);
+    }
+
+    return chars;
+}
+
+countCharGroups :: (charGroups: &Map(u8, u32)) -> Map(u32, [..] u8) {
+    counts := map.make(u32, [..] u8);
+
+    for entry: map.as_iter(charGroups) {
+        if map.has(&counts, entry.value) {
+            curArr: [..] u8 = map.get(&counts, entry.value)->unwrap();
+            array.push(&curArr, entry.key);
+            map.put(&counts, entry.value, curArr);
+        } else {
+            countChars := array.make(u8);
+            countChars << entry.key;
+            map.put(&counts, entry.value, countChars);
+        }
+    }
+
+    return counts;
+}
+
+getHandType :: (hand: str) -> HandType {
+    charGroups := groupChars(hand);
+    charGroupCounts := countCharGroups(&charGroups);
+
+    if map.has(&charGroupCounts, 5) {
+        return HandType.FiveOfAKind;
+    } elseif map.has(&charGroupCounts, 4) {
+        return HandType.FourOfAKind;
+    } elseif map.has(&charGroupCounts, 3) {
+        if map.has(&charGroupCounts, 2) {
+            return HandType.FullHouse;
+        }
+        return HandType.ThreeOfAKind;
+    } elseif map.has(&charGroupCounts, 2) {
+        // If there is more than one Card for which we have a count of 2 then we have at least 2 pairs
+        if map.get(&charGroupCounts, 2)->unwrap().count > 1 {
+            return HandType.TwoPair;
+        }
+        return HandType.OnePair;
+    }
+    return HandType.HighCard;
+}
+
+toHand :: (handInput: HandInput) -> Hand {
+    type := getHandType(handInput.hand);
+    return Hand.{handInput.hand, handInput.bid, type};
+}
+
+cmp :: (num1: $T, num2: T) -> i32 {
+    return 0 if num1 == num2 else (-1) if num1 < num2 else 1;
+}
+
+CARD_SEQUENCE :: "123456789TJQKA";
+CARD_SEQUENCE_WITH_JOKERS :: "J123456789TQKA";
+
+compareCard :: (card1: u8, card2: u8) -> i32 {
+    cardValue1 := index_of(CARD_SEQUENCE, card1);
+    cardValue2 := index_of(CARD_SEQUENCE, card2);
+    return cmp(cardValue1, cardValue2);
+}
+
+compareCardWithJokers :: (card1: u8, card2: u8) -> i32 {
+    cardValue1 := index_of(CARD_SEQUENCE_WITH_JOKERS, card1);
+    cardValue2 := index_of(CARD_SEQUENCE_WITH_JOKERS, card2);
+    return cmp(cardValue1, cardValue2);
+}
+
+compareHand :: (hand1: str, hand2: str) -> i32 {
+    if hand1.count < hand2.count {
+        return -1;
+    } elseif hand1.count > hand2.count {
+        return 1;
+    }
+    for i: 0 .. hand1.count {
+        c := compareCard(hand1[i], hand2[i]);
+        if c != 0 {
+            return c;
+        }
+    }
     return 0;
 }
 
-solve_day_7_part_2 :: () -> i32 {
+compareHandWithJokers :: (hand1: str, hand2: str) -> i32 {
+    if hand1.count < hand2.count {
+        return -1;
+    } elseif hand1.count > hand2.count {
+        return 1;
+    }
+    for i: 0 .. hand1.count {
+        c := compareCardWithJokers(hand1[i], hand2[i]);
+        if c != 0 {
+            return c;
+        }
+    }
     return 0;
+}
+
+compareHandType :: (handType1: HandType, handType2: HandType) -> i32 {
+    return cmp(handType1, handType2);
+}
+
+compareHands :: (hand1: Hand, hand2: Hand) -> i32 {
+    handTypeCmp := compareHandType(hand1.type, hand2.type);
+    if handTypeCmp != 0 {
+        return handTypeCmp;
+    }
+    return compareHand(hand1.hand, hand2.hand);
+}
+
+getHandTypeWithJokers :: (hand: Hand) -> HandType {
+    numJokers := slice.fold(hand.hand, 0, (c, a) => {
+        return a + 1 if c == 'J' else 0;
+    });
+
+    if (numJokers == 0) {
+        return hand.type;
+    }
+
+    switch (hand.type) {
+        case HandType.FiveOfAKind do return HandType.FiveOfAKind;
+        case HandType.FourOfAKind do return HandType.FiveOfAKind;
+        case HandType.FullHouse do return HandType.FiveOfAKind;
+        case HandType.ThreeOfAKind do return HandType.FourOfAKind;
+        case HandType.TwoPair {
+            if numJokers == 2 {
+                // Replace the two jokers with the same of the other pair
+                return HandType.FourOfAKind;
+            }
+            return HandType.FullHouse;
+        }
+        case HandType.OnePair do return HandType.ThreeOfAKind;
+        case HandType.HighCard do return HandType.OnePair;
+    }
+
+    return hand.type;
+}
+
+compareHandsWithJokers :: (hand1: Hand, hand2: Hand) -> i32 {
+    handTypeCmp := compareHandType(getHandTypeWithJokers(hand1), getHandTypeWithJokers(hand2));
+    if handTypeCmp != 0 {
+        return handTypeCmp;
+    }
+    return compareHandWithJokers(hand1.hand, hand2.hand);
+}
+
+solve_day_7_part_1 :: () -> i32 {
+
+    lines := split(day7input, '\n');
+
+    hands := iter.as_iter(lines)
+        |> iter.map(toHandInput)
+        |> iter.map(toHand)
+        |> iter.to_array();
+
+    sortedHands := array.sort(hands, compareHands);
+
+    totalWinnings := 0;
+
+    for rank: 1 .. sortedHands.count + 1 {
+        score := rank * sortedHands[rank - 1].bid;
+        totalWinnings += score;
+    }
+
+    return totalWinnings;
+}
+
+solve_day_7_part_2 :: () -> i32 {
+
+    lines := split(day7input, '\n');
+
+    hands := iter.as_iter(lines)
+        |> iter.map(toHandInput)
+        |> iter.map(toHand)
+        |> iter.to_array();
+
+    sortedHands := array.sort(hands, compareHandsWithJokers);
+
+    totalWinnings := 0;
+
+    for rank: 1 .. sortedHands.count + 1 {
+        score := rank * sortedHands[rank - 1].bid;
+        totalWinnings += score;
+    }
+
+    return totalWinnings;
 }
 
 day7input := """QTTQK 749

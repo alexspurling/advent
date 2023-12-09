@@ -17,6 +17,9 @@ done
 GREEN='\033[0;32m'
 NC='\033[0m'  # No color, to reset to the default color
 
+# Execute the command at least once
+eval "$command_to_run"
+
 echo "Monitoring for changes to ${files[*]}"
 
 while true; do
