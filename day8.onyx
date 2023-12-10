@@ -1,7 +1,9 @@
 use core {println, printf}
 use core.iter
-use core.string {split, split_iter, index_of}
+use core.string {split, split_iter, index_of, ends_with}
 use core.map
+use core.set
+use core.array
 
 
 day8desc := "Follow the instructions on the map to find a path through the desert."
@@ -44,21 +46,81 @@ solve_day_8_part_1 :: () -> i32 {
         node = curNode.left if instruction == 'L' else curNode.right;
         i = (i + 1) % instructions.count;
         numSteps += 1;
-        printf("instruction: {}, curNode: {}, node: {}, i: {}, numSteps: {}\n", instruction, curNode, node, i, numSteps);
     }
 
     return numSteps;
 }
 
-solve_day_8_part_2 :: () -> i32 {
-    return 0;
+cmp :: (a: u64, b: u64) -> i32 {
+    if (a == b) {
+        return 0;
+    } elseif (a < b) {
+        return -1;
+    }
+    return 1;
 }
 
-exampleInput := """LLR
+solve_day_8_part_2 :: () -> i32 {
+    lines := split(day8input, '\n');
 
-AAA = (BBB, BBB)
-BBB = (AAA, ZZZ)
-ZZZ = (ZZZ, ZZZ)"""
+    tree := createTree(lines[2 .. lines.count]);
+
+    instructions := lines[0];
+
+    // Find all the nodes that end with A
+    nodes := iter.as_iter(&tree)
+        |> iter.filter((entry) => ends_with(entry.key, "GCA"))
+        |> iter.map((entry) => entry.key)
+        |> iter.collect();
+
+    printf("Nodes that end with A: {}\n", nodes);
+
+    numNodesAtZ := 0;
+
+    solutions := array.make(u64);
+
+    for node: nodes {
+
+        thisNode := node;
+        i := 0;
+        numSteps := 0;
+        c := -1;
+
+        seen := set.make(str);
+
+        set.insert(&seen, node);
+
+        while node[2] != 'Z' {
+            instruction := instructions[i];
+            curNode := map.get(&tree, node)->unwrap();
+            node = curNode.left if instruction == 'L' else curNode.right;
+
+            printf("Next node: {}\n", node);
+
+            i = (i + 1) % instructions.count;
+            numSteps += 1;
+
+            if c == -1 && set.has(&seen, node) {
+                c = numSteps;
+                printf("The seen node: {}\n", node);
+            } else {
+                set.insert(&seen, node);
+            }
+        }
+
+        solutions << numSteps;
+    }
+
+    sortedSolutions := array.sort(solutions, cmp);
+    n: u64 = 0;
+
+    while true {
+        numSteps := n *
+        array.every(&solutions, (s) => )
+    }
+
+    return 0;
+}
 
 day8input := """LLRRLRRRLLRLRRLLLLRLRRLRRRLRLRRRLLRRLRRRLLRRLRRLRRLLRRRLRRLRRLRRRLRRLRLRLRRLRRLRRRLLRRLLLRRLRRRLRRRLRRRLRRLRRRLRLLRLRRRLRLRRLLRLRRRLRRRLRLRRRLRRRLRLRLRRLRRLRLRRLLRRRLRRRLRRRLLRRRLRLRLRLRLLRRRLRRRLRRLRRRLLRLRRLRRLRRRLRRRLRRLRLRLRRRLRRLRRLRRRLLRRLRLRLRRRLRLRLRRLRRLLRRLRRRLLRLLRLRLRRRR
 
