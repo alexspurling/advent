@@ -51,16 +51,16 @@ solve_day_8_part_1 :: () -> i32 {
     return numSteps;
 }
 
-cmp :: (a: u64, b: u64) -> i32 {
-    if (a == b) {
-        return 0;
-    } elseif (a < b) {
-        return -1;
-    }
-    return 1;
-}
+// cmp :: (a: u64, b: u64) -> i32 {
+//     if (a == b) {
+//         return 0;
+//     } elseif (a < b) {
+//         return -1;
+//     }
+//     return 1;
+// }
 
-solve_day_8_part_2 :: () -> i32 {
+solve_day_8_part_2 :: () -> u64 {
     lines := split(day8input, '\n');
 
     tree := createTree(lines[2 .. lines.count]);
@@ -69,7 +69,7 @@ solve_day_8_part_2 :: () -> i32 {
 
     // Find all the nodes that end with A
     nodes := iter.as_iter(&tree)
-        |> iter.filter((entry) => ends_with(entry.key, "GCA"))
+        |> iter.filter((entry) => ends_with(entry.key, "A"))
         |> iter.map((entry) => entry.key)
         |> iter.collect();
 
@@ -86,40 +86,47 @@ solve_day_8_part_2 :: () -> i32 {
         numSteps := 0;
         c := -1;
 
-        seen := set.make(str);
-
-        set.insert(&seen, node);
-
         while node[2] != 'Z' {
             instruction := instructions[i];
             curNode := map.get(&tree, node)->unwrap();
             node = curNode.left if instruction == 'L' else curNode.right;
 
-            printf("Next node: {}\n", node);
-
             i = (i + 1) % instructions.count;
             numSteps += 1;
-
-            if c == -1 && set.has(&seen, node) {
-                c = numSteps;
-                printf("The seen node: {}\n", node);
-            } else {
-                set.insert(&seen, node);
-            }
         }
 
-        solutions << numSteps;
+        solutions << ~~numSteps;
     }
 
     sortedSolutions := array.sort(solutions, cmp);
+    printf("Sorted solutions: {}\n", sortedSolutions);
     n: u64 = 0;
+    numSteps: u64 = 0;
+    firstSolution := sortedSolutions[0];
 
+    // Find the smallest number that is divisible by all of our solutions
+    // A better way to do this would be to use a LCM (least common multiple) algorithm
     while true {
-        numSteps := n *
-        array.every(&solutions, (s) => )
+        n += 1;
+        numSteps = n * firstSolution;
+        numMatches := 0;
+        for solution: sortedSolutions {
+            if numSteps % solution == 0 {
+                numMatches += 1;
+            } else {
+                break;
+            }
+        }
+
+        if numMatches == solutions.count {
+            break;
+        }
+        if n % 10000000 == 0 {
+            progress(cast(f64) n / 1100037949 * 100);
+        }
     }
 
-    return 0;
+    return numSteps;
 }
 
 day8input := """LLRRLRRRLLRLRRLLLLRLRRLRRRLRLRRRLLRRLRRRLLRRLRRLRRLLRRRLRRLRRLRRRLRRLRLRLRRLRRLRRRLLRRLLLRRLRRRLRRRLRRRLRRLRRRLRLLRLRRRLRLRRLLRLRRRLRRRLRLRRRLRRRLRLRLRRLRRLRLRRLLRRRLRRRLRRRLLRRRLRLRLRLRLLRRRLRRRLRRLRRRLLRLRRLRRLRRRLRRRLRRLRLRLRRRLRRLRRLRRRLLRRLRLRLRRRLRLRLRRLRRLLRRLRRRLLRLLRLRLRRRR
