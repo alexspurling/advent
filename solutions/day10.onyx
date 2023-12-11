@@ -10,7 +10,7 @@ use strings {toStr}
 use core.list
 
 
-day10desc := "Navigate through the maze of metal pipes."
+day10desc := "Calculate the length and size of the tile loop."
 
 map: [] str;
 
@@ -82,12 +82,12 @@ PosWithDepth :: struct {
 }
 
 // Return the maximum
-graphDepth :: (pos: Pos) -> i32 {
+graphDepth :: (start: Pos) -> i32 {
 
     seen := set.make(Pos);
     queue := list.make(PosWithDepth);
-    set.insert(&seen, pos);
-    list.push_end(&queue, PosWithDepth.{pos, 0});
+    set.insert(&seen, start);
+    list.push_end(&queue, PosWithDepth.{start, 0});
 
     maxDepth := 0;
     timeToDepthIncrease := 1;
@@ -116,6 +116,38 @@ graphDepth :: (pos: Pos) -> i32 {
     return maxDepth;
 }
 
+getLoop :: (start: Pos) -> [] Pos {
+
+    loop := array.make(Pos);
+
+    pos := start;
+    lastPos := start;
+
+    startFound := false;
+
+    while !startFound {
+        loop << pos;
+
+        printf("Cur pos: {}, loop: {}\n", pos, loop);
+
+        for neighbour: getNeighbours(pos) {
+            printf("Neighbor: {}\n", neighbour);
+            if !(neighbour == lastPos) {
+                if neighbour == start {
+                    startFound = true;
+                    break;
+                }
+                lastPos = pos;
+                pos = neighbour;
+                break;
+            }
+        }
+    }
+
+    return loop;
+
+}
+
 
 solve_day_10_part_1 :: () -> str {
 
@@ -132,7 +164,12 @@ solve_day_10_part_1 :: () -> str {
 
 
 solve_day_10_part_2 :: () -> str {
-    return "";
+
+    startPos := getStartPos();
+
+    loop := getLoop(startPos);
+
+    return toStr(loop.count);
 }
 
 
