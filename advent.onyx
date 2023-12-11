@@ -28,6 +28,7 @@ describe :: (day: i32) -> &str {
         case 6 do return &day6desc;
         case 7 do return &day7desc;
         case 8 do return &day8desc;
+        case 9 do return &day9desc;
     }
 }
 
@@ -58,6 +59,8 @@ solve :: (day: i32, part: i32) -> &str {
         case .{7, 2} do solution = solve_day_7_part_2();
         case .{8, 1} do solution = solve_day_8_part_1();
         case .{8, 2} do solution = solve_day_8_part_2();
+        case .{9, 1} do solution = solve_day_9_part_1();
+        case .{9, 2} do solution = solve_day_9_part_2();
     }
     return &solution;
 }
