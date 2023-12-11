@@ -5,6 +5,7 @@ use core {println, printf}
 use core.conv {parse_int}
 use core.math {sqrt}
 use strings
+use strings {toStr}
 
 
 day6desc := "Calculate how many ways you can beat the record in each boat race."
@@ -25,11 +26,10 @@ calculateNumWays :: (time: i64, record: i64) -> i64 {
     recordEndInt := cast(i64) recordEnd;
     numWays := recordEndInt - recordStartInt;
 
-    printf("Time: {}, record: {}. Record start: {}, end: {}, start: {}, end: {}, numWays: {}\n", time, record, recordStart, recordEnd, recordStartInt, recordEndInt, numWays);
     return numWays;
 }
 
-solve_day_6_part_1 :: () -> i32 {
+solve_day_6_part_1 :: () -> str {
     lines := split(day6input, '\n');
 
     timesLine := lines[0][index_of(lines[0], ": ") + 2 .. lines[0].count];
@@ -44,10 +44,6 @@ solve_day_6_part_1 :: () -> i32 {
             |> iter.map(x => parse_int(x))
             |> iter.to_array();
 
-
-    printf("Times: {}\n", times);
-    printf("Records: {}\n", records);
-
     totalWays: i64 = 1;
 
     for gameNum: 0 .. times.count {
@@ -57,10 +53,10 @@ solve_day_6_part_1 :: () -> i32 {
         totalWays = totalWays * calculateNumWays(time, record);
     }
 
-    return ~~totalWays;
+    return toStr(totalWays);
 }
 
-solve_day_6_part_2 :: () -> i32 {
+solve_day_6_part_2 :: () -> str {
     lines := split(day6input, '\n');
 
     timesLine := lines[0][index_of(lines[0], ": ") + 2 .. lines[0].count];
@@ -75,11 +71,7 @@ solve_day_6_part_2 :: () -> i32 {
         |> iter.to_array()
         |> parse_int();
 
-
-    printf("Time: {}\n", time);
-    printf("Record: {}\n", record);
-
-    return ~~calculateNumWays(time, record);
+    return toStr(calculateNumWays(time, record));
 }
 
 day6input := """Time:        44     70     70     80

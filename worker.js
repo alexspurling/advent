@@ -78,7 +78,7 @@ onmessage = (e) => {
         const day = e.data.params[0];
         const part = e.data.params[1];
         const startTime = new Date().getTime();
-        const result = wasmModule.instance.exports.solve(day, part);
+        const result = onyx_get_str(wasmModule.instance.exports.solve(day, part));
         console.log("Result: ", result, "in " + (new Date().getTime() - startTime) + "ms");
         postMessage({msg: "result", value: result});
     } else {

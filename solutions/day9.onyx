@@ -1,0 +1,10 @@
+use core {printf, println}
+use core.string
+
+solve_day_9_part_1 :: () -> str {
+    return "";
+}
+
+solve_day_9_part_2 :: () -> str {
+    return "";
+}

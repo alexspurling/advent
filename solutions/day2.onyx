@@ -4,6 +4,7 @@ use core.iter
 use core.iter {fold}
 use core.conv {str_to_i64}
 use core.math
+use strings {toStr}
 
 day2desc := "Calculate which games would have been possible."
 
@@ -35,7 +36,7 @@ draw_valid :: (draw: str) -> bool {
 }
 
 
-solve_day_2_part_1 :: () -> i32 {
+solve_day_2_part_1 :: () -> str {
 
     lines := split(day2input, '\n');
 
@@ -63,10 +64,12 @@ solve_day_2_part_1 :: () -> i32 {
         if valid {
             gameIdSum += gameId;
         }
-        printf("{}, valid: {}\n", line, valid);
     }
 
-    return gameIdSum;
+    thesoln := toStr(gameIdSum);
+    println("The soln");
+    println(thesoln);
+    return thesoln;
 }
 
 Draw :: struct {
@@ -97,7 +100,7 @@ toDraw :: (draw: str) -> Draw {
     return Draw.{red, green, blue};
 }
 
-solve_day_2_part_2 :: () -> i32 {
+solve_day_2_part_2 :: () -> str {
 
     powerSum := 0;
 
@@ -112,8 +115,6 @@ solve_day_2_part_2 :: () -> i32 {
         allDrawsArr := split_iter(allDrawsStr, "; ");
         draws := iter.map(allDrawsArr, toDraw);
 
-        println(allDrawsStr);
-
         // for all the draws in the game, get the max red, green and blue counts
         max_draw := iter.fold(draws, Draw.{}, (d: Draw, a: Draw) => {
             return Draw.{
@@ -123,13 +124,11 @@ solve_day_2_part_2 :: () -> i32 {
             };
         });
 
-        printf("Max draw: {}\n", max_draw);
-
         power := max_draw.red * max_draw.green * max_draw.blue;
         powerSum += power;
     }
 
-    return powerSum;
+    return toStr(powerSum);
 }
 
 day2input := """Game 1: 1 green, 6 red, 4 blue; 2 blue, 6 green, 7 red; 3 red, 4 blue, 6 green; 3 green; 3 blue, 2 green, 1 red

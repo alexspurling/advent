@@ -6,6 +6,7 @@ use core.conv
 use core.set
 use core.math
 use core.array
+use strings {toStr}
 
 
 day4desc := "Calculate the winning scratch cards";
@@ -53,7 +54,7 @@ intersection :: (s1: &Set($T), s2: &Set($T)) -> Set(T) {
     return newSet;
 }
 
-solve_day_4_part_1 :: () -> i32 {
+solve_day_4_part_1 :: () -> str {
 
     lines := split(day4input, '\n');
 
@@ -84,11 +85,11 @@ solve_day_4_part_1 :: () -> i32 {
         scoreSum += score;
     }
 
-    return scoreSum;
+    return toStr(scoreSum);
 }
 
 
-solve_day_4_part_2 :: () -> i32 {
+solve_day_4_part_2 :: () -> str {
 
     lines := split(day4input, '\n');
 
@@ -126,7 +127,7 @@ solve_day_4_part_2 :: () -> i32 {
 
     totalCards := array.fold(multiplier, 0, (n, a) => n + a);
 
-    return totalCards;
+    return toStr(totalCards);
 }
 
 day4input := """Card   1: 17 15  5 75 36 13 16 66 92 39 | 13 92 16  5 87 78 15 94 21 48 30 62 70 41  3 39 22 17 77 58 75 52 83 34 24

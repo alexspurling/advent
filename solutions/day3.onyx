@@ -2,7 +2,7 @@ use core {println, printf}
 use core.string {split}
 use core.iter
 use core.conv {str_to_i64}
-
+use strings {toStr}
 use strings
 
 day3desc := "Calculate the part numbers for the engine schematic."
@@ -20,7 +20,7 @@ surrounding_cells :: (x: i32, y: i32) -> [8] Cell {
              Cell.{x - 1, y + 1}, Cell.{x, y + 1}, Cell.{x + 1, y + 1}];
 }
 
-solve_day_3_part_1 :: () -> i32 {
+solve_day_3_part_1 :: () -> str {
 
     lines := split(day3input, '\n');
 
@@ -63,7 +63,7 @@ solve_day_3_part_1 :: () -> i32 {
         }
     }
 
-    return iter.fold(iter.as_iter(partNumbers), 0, (n, a) => n + a);
+    return toStr(iter.fold(iter.as_iter(partNumbers), 0, (n, a) => n + a));
 }
 
 Part :: struct {
@@ -87,7 +87,7 @@ getNearbyParts :: (parts: [..] Part, lines: [] str, x: i32, y: i32) -> [..] Part
     return nearbyParts;
 }
 
-solve_day_3_part_2 :: () -> i32 {
+solve_day_3_part_2 :: () -> str {
     lines := split(day3input, '\n');
 
     parts: [..] Part;
@@ -128,7 +128,7 @@ solve_day_3_part_2 :: () -> i32 {
         }
     }
 
-    return gearRatioSum;
+    return toStr(gearRatioSum);
 }
 
 day3input := """........440...............418..643.....438......740.261......................................727...........................870..............

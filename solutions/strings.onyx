@@ -1,8 +1,10 @@
 package strings
 
-use core {array}
+use core {println}
 use core.intrinsics.types {type_is_struct}
 use core.slice
+use core.conv
+use core.string
 
 
 isDigit :: (c: u8) -> bool {
@@ -64,4 +66,11 @@ find_last :: macro (arr: [] $T, pred: Code) -> i32 {
     }
 
     return -1;
+}
+
+toStr :: (va: ..any) -> str {
+    // This function is intended to format single variables so we only need a small buffer
+    buffer: [128] u8;
+    out := conv.format_va(buffer, "{}", va);
+    return string.alloc_copy(out, allocator=context.temp_allocator);
 }

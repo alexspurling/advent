@@ -3,6 +3,7 @@ use core.iter
 use core.string {split, split_iter, index_of, ends_with}
 use core.map
 use core.array
+use strings {toStr}
 
 
 day8desc := "Follow the instructions on the map to find a path through the desert."
@@ -28,7 +29,7 @@ createTree :: (nodes: [] str) -> Map(str, Node) {
     return tree;
 }
 
-solve_day_8_part_1 :: () -> i32 {
+solve_day_8_part_1 :: () -> str {
     lines := split(day8input, '\n');
 
     tree := createTree(lines[2 .. lines.count]);
@@ -45,13 +46,12 @@ solve_day_8_part_1 :: () -> i32 {
         node = curNode.left if instruction == 'L' else curNode.right;
         i = (i + 1) % instructions.count;
         numSteps += 1;
-        printf("instruction: {}, curNode: {}, node: {}, i: {}, numSteps: {}\n", instruction, curNode, node, i, numSteps);
     }
 
-    return numSteps;
+    return toStr(numSteps);
 }
 
-solve_day_8_part_2 :: () -> u64 {
+solve_day_8_part_2 :: () -> str {
     lines := split(day8input, '\n');
 
     tree := createTree(lines[2 .. lines.count]);
@@ -62,7 +62,7 @@ solve_day_8_part_2 :: () -> u64 {
     nodes := iter.as_iter(&tree)
         |> iter.filter((entry) => ends_with(entry.key, "A"))
         |> iter.map((entry) => entry.key)
-        |> iter.collect();
+        |> iter.to_array();
 
     printf("Nodes that end with A: {}\n", nodes);
 
@@ -117,14 +117,14 @@ solve_day_8_part_2 :: () -> u64 {
         }
     }
 
-    return numSteps;
+    return toStr(numSteps);
 }
 
 exampleInput := """LLR
 
 AAA = (BBB, BBB)
 BBB = (AAA, ZZZ)
-ZZZ = (ZZZ, ZZZ)"""
+ZZZ = (ZZZ, ZZZ)""";
 
 day8input := """LLRRLRRRLLRLRRLLLLRLRRLRRRLRLRRRLLRRLRRRLLRRLRRLRRLLRRRLRRLRRLRRRLRRLRLRLRRLRRLRRRLLRRLLLRRLRRRLRRRLRRRLRRLRRRLRLLRLRRRLRLRRLLRLRRRLRRRLRLRRRLRRRLRLRLRRLRRLRLRRLLRRRLRRRLRRRLLRRRLRLRLRLRLLRRRLRRRLRRLRRRLLRLRRLRRLRRRLRRRLRRLRLRLRRRLRRLRRLRRRLLRRLRLRLRRRLRLRLRRLRRLLRRLRRRLLRLLRLRLRRRR
 
@@ -877,4 +877,4 @@ KQP = (LQC, HFR)
 LHR = (XJS, LKR)
 GCQ = (DVF, BXQ)
 VVL = (TCF, DLC)
-MKH = (NXX, BCD)"""
+MKH = (NXX, BCD)""";

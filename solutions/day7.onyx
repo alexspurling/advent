@@ -5,6 +5,7 @@ use core.conv {parse_int}
 use core.map
 use core.array
 use core.slice
+use strings {toStr}
 
 
 day7desc := "Calculate the total winnings in the Camel Cards game."
@@ -188,7 +189,7 @@ compareHandsWithJokers :: (hand1: Hand, hand2: Hand) -> i32 {
     return compareHandWithJokers(hand1.hand, hand2.hand);
 }
 
-solve_day_7_part_1 :: () -> i32 {
+solve_day_7_part_1 :: () -> str {
 
     lines := split(day7input, '\n');
 
@@ -206,10 +207,10 @@ solve_day_7_part_1 :: () -> i32 {
         totalWinnings += score;
     }
 
-    return totalWinnings;
+    return toStr(totalWinnings);
 }
 
-solve_day_7_part_2 :: () -> i32 {
+solve_day_7_part_2 :: () -> str {
 
     lines := split(day7input, '\n');
 
@@ -227,7 +228,7 @@ solve_day_7_part_2 :: () -> i32 {
         totalWinnings += score;
     }
 
-    return totalWinnings;
+    return toStr(totalWinnings);
 }
 
 day7input := """QTTQK 749
