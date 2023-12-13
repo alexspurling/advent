@@ -26,7 +26,7 @@ emptyColumnIndexes :: (map: [] str) -> [] i32 {
 }
 
 
-expandSky :: (map: [] str) -> [] str {
+expandSky :: (map: [] str, multiplier: i32 = 1) -> [] str {
     sky := array.make(str);
 
     // Get the index of all the empty coluns
@@ -40,14 +40,18 @@ expandSky :: (map: [] str) -> [] str {
             // for each cell, if this is part of an empty column then insert an additional space into the new row
             expandedRow << row[x];
             if array.contains(emptyCols, x) {
-                expandedRow << '.';
+                for i: 0 .. (multiplier - 1) {
+                    expandedRow << '.';
+                }
             }
         }
 
         sky << expandedRow;
         // If the row was empty then insert it twice
         if array.every(expandedRow, (c) => c == '.') {
-            sky << expandedRow;
+            for i: 0 .. (multiplier - 1) {
+                sky << expandedRow;
+            }
         }
     }
 
@@ -66,7 +70,7 @@ findGalaxies :: (sky: [] str) -> [] Pos {
     return galaxies;
 }
 
-findSumOfShortestPathsBetweenTwoGalaxies :: (sky: [] str, galaxies: [] Pos) -> i32 {
+findSumOfShortestPathsBetweenGalaxies :: (sky: [] str, galaxies: [] Pos) -> i32 {
     sum := 0;
     for a: 0 .. galaxies.count {
         for b: a + 1 .. galaxies.count {
@@ -81,32 +85,74 @@ findSumOfShortestPathsBetweenTwoGalaxies :: (sky: [] str, galaxies: [] Pos) -> i
 
 solve_day_11_part_1 :: () -> str {
 
-    lines := string.split(day11input, '\n');
+    map := string.split(day11input, '\n');
 
-    sky := expandSky(lines);
+    sky := expandSky(map, 2);
 
     galaxies := findGalaxies(sky);
 
-    sumShortestPaths := findSumOfShortestPathsBetweenTwoGalaxies(sky, galaxies);
+    sumShortestPaths := findSumOfShortestPathsBetweenGalaxies(sky, galaxies);
 
     return toStr(sumShortestPaths);
 }
 
-solve_day_11_part_2 :: () -> str {
-    return "";
+emptyRowIndexes :: (map: [] str) -> [] i32 {
+    emptyRows := array.make(i32);
+    for y: 0 .. map.count {
+        row := map[y];
+        if array.every(row, (c) => c == '.') {
+            emptyRows << y;
+        }
+    }
+    return emptyRows;
 }
 
 
-example11Input := """...#......
-.......#..
-#.........
-..........
-......#...
-.#........
-.........#
-..........
-.......#..
-#...#.....""";
+countWhere :: (arr: [] i32, lowerBound: i32, upperBound: i32) -> i32 {
+    count: i32 = 0;
+    for elem: arr {
+        if elem >= lowerBound && elem < upperBound {
+            count += 1;
+        }
+    }
+    return count;
+}
+
+
+findSumOfShortestPathsBetweenExpandedGalaxies :: (sky: [] str, galaxies: [] Pos, emptyCols: [] i32, emptyRows: [] i32, multiplier: u64) -> u64 {
+    sum: u64 = 0;
+    for a: 0 .. galaxies.count {
+        for b: a + 1 .. galaxies.count {
+            galaxyA := galaxies[a];
+            galaxyB := galaxies[b];
+
+            minX := math.min(galaxyA.x, galaxyB.x);
+            maxX := math.max(galaxyA.x, galaxyB.x);
+            minY := math.min(galaxyA.y, galaxyB.y);
+            maxY := math.max(galaxyA.y, galaxyB.y);
+
+            emptyColsBetweenAAndB := countWhere(emptyCols, minX, maxX);
+            emptyRowsBetweenAAndB := countWhere(emptyRows, minY, maxY);
+
+            sum += cast(u64) ((maxX - minX) + (maxY - minY)) + (cast(u64) emptyColsBetweenAAndB * (multiplier - 1)) + (cast(u64) emptyRowsBetweenAAndB * (multiplier - 1));
+        }
+    }
+    return sum;
+}
+
+solve_day_11_part_2 :: () -> str {
+
+    map := string.split(day11input, '\n');
+
+    emptyCols := emptyColumnIndexes(map);
+    emptyRows := emptyRowIndexes(map);
+
+    galaxies := findGalaxies(map);
+
+    sumShortestPaths := findSumOfShortestPathsBetweenExpandedGalaxies(map, galaxies, emptyCols, emptyRows, 1000000);
+
+    return toStr(sumShortestPaths);
+}
 
 
 day11input := """......#.....#.........................#...........#..........#.....#.......#..............#.................................................
