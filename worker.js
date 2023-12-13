@@ -31,7 +31,6 @@ const importWasmModule = async (wasmModuleUrl) => {
             print_str: onyx_print_str,
             time: Date.now,
             progress: (p) => {
-                console.log("Progress: ", p);
                 postMessage({msg: "progress", value: p});
             }
         }

@@ -24,7 +24,7 @@ Pos :: struct {
     }
 }
 #operator == (p1: Pos, p2: Pos) -> bool {
-    return p1.x == p2.x && p2.y == p2.y;
+    return p1.x == p2.x && p1.y == p2.y;
 }
 
 connectLeft :: "SJ-7";
@@ -33,7 +33,7 @@ connectUp :: "SL|J";
 connectDown :: "SF|7";
 
 
-getNeighbours :: (p: Pos) -> [..] Pos {
+getLoopNeighbours :: (p: Pos) -> [..] Pos {
 
     neighbours := array.make(Pos);
 
@@ -90,7 +90,6 @@ graphDepth :: (start: Pos) -> i32 {
     list.push_end(&queue, PosWithDepth.{start, 0});
 
     maxDepth := 0;
-    timeToDepthIncrease := 1;
 
     while list.count(&queue) > 0 {
         v := list.pop_begin(&queue);
@@ -100,14 +99,13 @@ graphDepth :: (start: Pos) -> i32 {
             maxDepth = v.depth;
         }
 
-        neighbours := getNeighbours(v.pos);
+        neighbours := getLoopNeighbours(v.pos);
 
         // printf("Exploring: {}, max depth: {}, neighbours: {}\n", v.pos, maxDepth, neighbours);
 
         // Get all the neighbours
         for neighbour: neighbours {
             if !set.has(&seen, neighbour) {
-                timeToDepthIncrease += 1;
                 set.insert(&seen, neighbour);
                 list.push_end(&queue, PosWithDepth.{neighbour, v.depth + 1});
             }
@@ -127,11 +125,7 @@ getLoop :: (start: Pos) -> [] Pos {
 
     while !startFound {
         loop << pos;
-
-        printf("Cur pos: {}, loop: {}\n", pos, loop);
-
-        for neighbour: getNeighbours(pos) {
-            printf("Neighbor: {}\n", neighbour);
+        for neighbour: getLoopNeighbours(pos) {
             if !(neighbour == lastPos) {
                 if neighbour == start {
                     startFound = true;
@@ -145,7 +139,6 @@ getLoop :: (start: Pos) -> [] Pos {
     }
 
     return loop;
-
 }
 
 
@@ -162,14 +155,168 @@ solve_day_10_part_1 :: () -> str {
     return toStr(maxDepth);
 }
 
+getNeighbours :: (p: Pos) -> [] Pos {
+
+    neighbours := array.make(Pos, allocator=context.temp_allocator);
+
+    curTile := map[p.y][p.x];
+
+    if p.x > 0 {
+        neighbours << Pos.{p.x - 1, p.y};
+    }
+    if p.x < (map[0].count - 1) {
+        neighbours << Pos.{p.x + 1, p.y};
+    }
+    if p.y > 0 {
+        neighbours << Pos.{p.x, p.y - 1};
+    }
+    if p.y < (map.count - 1) {
+        neighbours << Pos.{p.x, p.y + 1};
+    }
+
+    return neighbours;
+}
+
+fill :: (start: Pos, loop: [] Pos) -> i32 {
+
+    if start.x < 0 || start.y < 0 ||
+            start.x >= map[0].length || start.y >= map.length ||
+            array.contains(loop, start) {
+        return 0;
+    }
+
+    numTilesFilled := 0;
+
+    if map[start.y][start.x] != 'X' {
+        map[start.y][start.x] = 'X'; // Mark this tile as 'seen'
+        numTilesFilled += 1;
+    }
+
+    queue := list.make(Pos);
+    list.push_begin(&queue, start);
+
+    while !list.empty(&queue) {
+        nextTile := list.pop_end(&queue);
+
+        neighbours := getNeighbours(nextTile);
+
+        // Get all the neighbours excluding any that are on the loop
+        for neighbour: neighbours {
+            if map[neighbour.y][neighbour.x] != 'X' &&
+               !array.contains(loop, neighbour) {
+                map[neighbour.y][neighbour.x] = 'X';
+                list.push_begin(&queue, neighbour);
+                numTilesFilled += 1;
+            }
+        }
+    }
+
+    return numTilesFilled;
+}
+
+Direction :: enum {
+    NORTH;
+    SOUTH;
+    EAST;
+    WEST;
+    UNKNOWN;
+}
+
+
+getDirection :: (curDirection: Direction, curTile: u8) -> Direction {
+    switch curTile {
+        case '-', '|', 'S' {
+            return curDirection;
+        }
+        case 'F' do return Direction.SOUTH if curDirection == Direction.WEST else Direction.EAST;
+        case 'L' do return Direction.NORTH if curDirection == Direction.WEST else Direction.EAST;
+        case '7' do return Direction.SOUTH if curDirection == Direction.EAST else Direction.WEST;
+        case 'J' do return Direction.NORTH if curDirection == Direction.EAST else Direction.WEST;
+    }
+    return Direction.UNKNOWN;
+}
+
+fillLoop :: (loop: [] Pos, startDirection: Direction) -> i32 {
+
+    totalFilled := 0;
+
+    direction := startDirection;
+
+    n := 0;
+
+    for p: loop {
+
+        curTile := map[p.y][p.x];
+
+        direction = getDirection(direction, curTile);
+
+        switch (curTile) {
+            case '-' {
+                if direction == Direction.EAST {
+                    totalFilled += fill(Pos.{p.x, p.y - 1}, loop);
+                } elseif direction == Direction.WEST {
+                    totalFilled += fill(Pos.{p.x, p.y + 1}, loop);
+                }
+            }
+            case '|' {
+                if direction == Direction.NORTH {
+                    totalFilled += fill(Pos.{p.x - 1, p.y}, loop);
+                } elseif direction == Direction.SOUTH {
+                    totalFilled += fill(Pos.{p.x + 1, p.y}, loop);
+                }
+            }
+            case 'F' {
+                if direction == Direction.EAST {
+                    totalFilled += fill(Pos.{p.x - 1, p.y}, loop);
+                    totalFilled += fill(Pos.{p.x, p.y - 1}, loop);
+                }
+            }
+            case 'L' {
+                if direction == Direction.NORTH {
+                    totalFilled += fill(Pos.{p.x, p.y + 1}, loop);
+                    totalFilled += fill(Pos.{p.x - 1, p.y}, loop);
+                }
+            }
+            case '7' {
+                if direction == Direction.SOUTH {
+                    totalFilled += fill(Pos.{p.x, p.y - 1}, loop);
+                    totalFilled += fill(Pos.{p.x + 1, p.y}, loop);
+                }
+            }
+            case 'J' {
+                if direction == Direction.WEST {
+                    totalFilled += fill(Pos.{p.x + 1, p.y}, loop);
+                    totalFilled += fill(Pos.{p.x, p.y + 1}, loop);
+                }
+            }
+        }
+
+        if n % 1000 == 0 {
+            progress(cast(f64) n / ~~loop.count * 100);
+        }
+        n += 1;
+    }
+
+    return totalFilled;
+}
+
 
 solve_day_10_part_2 :: () -> str {
 
     startPos := getStartPos();
 
+    // Copy the input so we can modify it
+    input := array.copy(day10input);
+
+    map = string.split(input, '\n');
+
     loop := getLoop(startPos);
 
-    return toStr(loop.count);
+    array.reverse(loop);
+
+    totalFilled := fillLoop(loop, Direction.SOUTH);
+
+    return toStr(totalFilled);
 }
 
 

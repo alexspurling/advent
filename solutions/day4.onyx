@@ -31,19 +31,6 @@ to_set :: (it: Iterator($T)) -> Set(T) {
     return theSet;
 }
 
-set_to_str :: (s: &Set($T)) -> str {
-    buffer := "[";
-    for item: set.as_iter(s) {
-        if #first {
-            buffer = tprintf("{}{}", buffer, *item);
-        } else {
-            buffer = tprintf("{}, {}", buffer, *item);
-        }
-    }
-    buffer = tprintf("{}]", buffer);
-    return buffer;
-}
-
 intersection :: (s1: &Set($T), s2: &Set($T)) -> Set(T) {
     newSet := set.make(T);
     for item: set.as_iter(s1) {
