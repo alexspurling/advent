@@ -32,20 +32,24 @@ public class Day13 {
         int verticalReflection = -1;
         for (int x = 0; x < width - 1; x++) {
             boolean reflection = true;
+            int numMisMatches = 0;
             for (int xr = 0; x - xr >= 0 && x + 1 + xr < width; xr++) {
                 for (int y = 0; y < height; y++) {
                     char left = pattern.get(y).charAt(x - xr);
                     char right = pattern.get(y).charAt((x + 1) + xr);
                     if (left != right) {
-                        reflection = false;
-                        break;
+                        numMisMatches++;
+                        if (numMisMatches == 2) {
+                            reflection = false;
+                            break;
+                        }
                     }
                 }
                 if (!reflection) {
                     break;
                 }
             }
-            if (reflection) {
+            if (reflection && numMisMatches == 1) {
                 verticalReflection = x + 1;
                 break;
             }
@@ -57,20 +61,24 @@ public class Day13 {
         int horizontalReflection = -1;
         for (int y = 0; y < height - 1; y++) {
             boolean reflection = true;
+            int numMisMatches = 0;
             for (int yr = 0; y - yr >= 0 && y + 1 + yr < height; yr++) {
                 for (int x = 0; x < width; x++) {
                     char left = pattern.get(y - yr).charAt(x);
                     char right = pattern.get((y + 1) + yr).charAt(x);
                     if (left != right) {
-                        reflection = false;
-                        break;
+                        numMisMatches++;
+                        if (numMisMatches == 2) {
+                            reflection = false;
+                            break;
+                        }
                     }
                 }
                 if (!reflection) {
                     break;
                 }
             }
-            if (reflection) {
+            if (reflection && numMisMatches == 1) {
                 horizontalReflection = y + 1;
                 break;
             }
