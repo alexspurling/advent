@@ -1,15 +1,163 @@
 use core {println, printf}
+use core.string
+use core.iter
+use strings {toStr}
+use core.conv
+use core.array
+use core.map
+use core.slice
+use core.hash {
+    corehash :: hash
+}
 
 
-day12desc := "Find the working springs";
+day12desc := "Count how many possible patterns of working and non-working springs are possible.";
+
+
+contains :: (input: str, char: u8) -> bool {
+    for c: input {
+        if c == char {
+            return true;
+        }
+    }
+    return false;
+}
+
+hashArr :: (arr: [] i32) -> i32 {
+    result := 1;
+    for a: arr {
+        result = 31 * result * a;
+    }
+    return result;
+}
+
+SpringRecord :: struct {
+    input: str;
+    codes: [] i32;
+
+    hash :: (p: SpringRecord) -> i32 {
+        // This is the algorithm Java uses
+        return 31 * 31 * corehash(p.input) * hashArr(p.codes);
+    }
+}
+#operator == (r1: SpringRecord, r2: SpringRecord) -> bool {
+    return r1.input == r2.input && slice.equal(r1.codes, r2.codes);
+}
+
+
+numSolutions :: (record: SpringRecord, cache: &Map(SpringRecord, u64)) -> u64 {
+    input := record.input;
+    codes := record.codes;
+    if input.length == 0 {
+        return ~~(1 if codes.length == 0 else 0);
+    }
+
+    if codes.length == 0 {
+        return ~~(0 if contains(input, '#') else 1);
+    }
+
+    if map.has(cache, record) {
+        return map.get(cache, record)->unwrap();
+    }
+
+    solutions: u64 = 0;
+
+    curChar := input[0];
+    if curChar == '.' || curChar == '?' {
+        solutions += numSolutions(SpringRecord.{input[1 .. input.length], codes}, cache);
+    }
+    if curChar == '#' || curChar == '?' {
+        curCode := codes[0];
+
+        if curCode <= input.length && !contains(input[0 .. curCode], '.') && (curCode == input.length || input[curCode] != '#') {
+            nextInput: str;
+            if curCode == input.length {
+                nextInput = input[curCode .. input.length];
+            } else {
+                nextInput = input[curCode + 1 .. input.length];
+            }
+            nextCodes := codes[1 .. codes.length];
+            solutions += numSolutions(SpringRecord.{nextInput, nextCodes}, cache);
+        }
+    }
+
+    map.put(cache, record, solutions);
+
+    return solutions;
+}
+
+
+createSpringRecord :: (line: str) -> SpringRecord {
+    record := string.split(line, ' ');
+    codes := string.split(record[1], ',');
+    codeNums := iter.as_iter(codes)
+        |> iter.map((s) => cast(i32) conv.parse_int(s))
+        |> iter.to_array();
+    return SpringRecord.{record[0], codeNums};
+}
+
+parseSpringRecords :: (input: str) -> [] SpringRecord {
+    lines := string.split(input, '\n');
+
+    parsed := iter.as_iter(lines)
+        |> iter.map(createSpringRecord)
+        |> iter.to_array();
+
+    return parsed;
+}
+
+multiplyString :: (input: str, delim: str) -> str {
+    return string.join(.[input, input, input, input, input], delim);
+}
+
+multiplyArr :: (arr: [] i32) -> [] i32 {
+    newArr := array.make(i32);
+    for i: 0 .. 5 {
+        array.concat(&newArr, arr);
+    }
+    return newArr;
+}
+
+multiplySpringRecords :: (records: [] SpringRecord) -> [] SpringRecord {
+    return iter.as_iter(records)
+        |> iter.map((record) => SpringRecord.{multiplyString(record.input, "?"), multiplyArr(record.codes)})
+        |> iter.to_array();
+}
+
+
+findSolutions :: (records: [] SpringRecord) -> u64 {
+    cache := map.make(SpringRecord, u64);
+    totalSolutions: u64 = 0;
+    for i: 0 .. records.length {
+        record := records[i];
+        solutions := numSolutions(record, &cache);
+        printf("Record: {}, Solutions: {} (cache size: {})\n", record.input, solutions, cache.entries.count);
+        totalSolutions += solutions;
+        progress(100 * cast(f64) i / cast(f64) records.length);
+    }
+    return totalSolutions;
+}
 
 solve_day_12_part_1 :: () -> str {
-    return "";
+    records := parseSpringRecords(day12input);
+    totalSolutions : = findSolutions(records);
+    return toStr(totalSolutions);
 }
 
 solve_day_12_part_2 :: () -> str {
-    return "";
+    records := parseSpringRecords(day12input);
+    records = multiplySpringRecords(records);
+    totalSolutions : = findSolutions(records);
+    return toStr(totalSolutions);
 }
+
+
+day12ExampleInput := """???.### 1,1,3
+.??..??...?##. 1,1,3
+?#?#?#?#?#?#?#? 1,3,1,6
+????.#...#... 4,1,1
+????.######..#####. 1,6,5
+?###???????? 3,2,1""";
 
 
 day12input := """??#??#??##.#???? 4,2,2,1,2
