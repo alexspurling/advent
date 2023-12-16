@@ -12,6 +12,7 @@ use core {println, printf}
 #load "solutions/day10.onyx"
 #load "solutions/day11.onyx"
 #load "solutions/day12.onyx"
+#load "solutions/day13.onyx"
 
 #export "_initialize" _initialize
 _initialize :: () {
@@ -35,6 +36,7 @@ describe :: (day: i32) -> &str {
         case 10 do return &day10desc;
         case 11 do return &day11desc;
         case 12 do return &day12desc;
+        case 13 do return &day13desc;
     }
 }
 
@@ -73,6 +75,8 @@ solve :: (day: i32, part: i32) -> &str {
         case .{11, 2} do solution = solve_day_11_part_2();
         case .{12, 1} do solution = solve_day_12_part_1();
         case .{12, 2} do solution = solve_day_12_part_2();
+        case .{13, 1} do solution = solve_day_13_part_1();
+        case .{13, 2} do solution = solve_day_13_part_2();
     }
     return &solution;
 }
