@@ -21,16 +21,63 @@ Direction :: enum {
     UNKNOWN;
 }
 
-tiltPlatform :: (platform: str, direction: Direction) -> str {
+tiltPlatform :: (platform: [] str, direction: Direction) -> [] str {
+
+    switch direction {
+        case Direction.NORTH {
+            for x: 0 .. platform[0].count {
+                // If we tilt to the north then we need to scan top to bottom
+                y := 0;
+                while y < platform.count {
+                    if platform[y][x] == '.' {
+                        // This gap needs to be filled
+                        for y2: y + 1 .. platform.count {
+                            if platform[y2][x] == 'O' {
+                                // Move the rock up
+                                platform[y][x] = 'O';
+                                platform[y2][x] = '.';
+                                break;
+                            } elseif platform[y2][x] == '#' {
+                                // Skip to the next immovable rock
+                                y = y2;
+                                break;
+                            }
+                        }
+                    }
+                    y += 1;
+                }
+            }
+        }
+    }
+
     return platform;
 }
 
-calculateWeight :: (platfor: str) -> i32 {
-    return 1;
+calculateWeight :: (platform: [] str) -> i32 {
+
+    totalWeight := 0;
+    for y: 0 .. platform.count {
+        weightMultiplier := platform.count - y;
+        for x: 0 .. platform[0].count {
+            if platform[y][x] == 'O' {
+                totalWeight += weightMultiplier;
+            }
+        }
+    }
+
+    return totalWeight;
+}
+
+printPlatform :: (platform: [] str) {
+    for line: platform {
+        println(line);
+    }
 }
 
 solve_part_1 :: () -> str {
-    platform := tiltPlatform(day14ExampleInput, Direction.NORTH);
+    platform := string.split(day14Input, '\n');
+    platform = tiltPlatform(platform, Direction.NORTH);
+    printPlatform(platform);
     totalWeight := calculateWeight(platform);
     return toStr(totalWeight);
 }
