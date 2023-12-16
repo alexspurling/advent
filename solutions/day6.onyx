@@ -1,3 +1,5 @@
+package day6
+
 use core.string
 use core.string {split, split_iter, index_of}
 use core.iter
@@ -8,7 +10,7 @@ use strings
 use strings {toStr}
 
 
-day6desc := "Calculate how many ways you can beat the record in each boat race."
+desc := "Calculate how many ways you can beat the record in each boat race."
 
 
 calculateNumWays :: (time: i64, record: i64) -> i64 {
@@ -29,7 +31,7 @@ calculateNumWays :: (time: i64, record: i64) -> i64 {
     return numWays;
 }
 
-solve_day_6_part_1 :: () -> str {
+solve_part_1 :: () -> str {
     lines := split(day6input, '\n');
 
     timesLine := lines[0][index_of(lines[0], ": ") + 2 .. lines[0].count];
@@ -56,7 +58,7 @@ solve_day_6_part_1 :: () -> str {
     return toStr(totalWays);
 }
 
-solve_day_6_part_2 :: () -> str {
+solve_part_2 :: () -> str {
     lines := split(day6input, '\n');
 
     timesLine := lines[0][index_of(lines[0], ": ") + 2 .. lines[0].count];

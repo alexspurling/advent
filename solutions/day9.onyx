@@ -1,3 +1,5 @@
+package day9
+
 use core {printf, println, range}
 use core.string
 use core.array
@@ -6,7 +8,7 @@ use core.conv
 use strings {toStr}
 
 
-day9desc := "Predict the previous and next values of the OASIS report."
+desc := "Predict the previous and next values of the OASIS report."
 
 
 getDifferences :: (sequence: [..] i64) -> [..] i64 {
@@ -24,8 +26,8 @@ getDifferences :: (sequence: [..] i64) -> [..] i64 {
 }
 
 
-solve_day_9_part_1 :: () -> str {
-    
+solve_part_1 :: () -> str {
+
     lines := string.split(day9input, '\n');
 
     sumPredictions: i64 = 0;
@@ -58,8 +60,8 @@ solve_day_9_part_1 :: () -> str {
     return toStr(sumPredictions);
 }
 
-solve_day_9_part_2 :: () -> str {
-    
+solve_part_2 :: () -> str {
+
     // A smarter way to do part 2 would be to just reverse the inputs and re-use the algorithm for part 1
 
     lines := string.split(day9input, '\n');

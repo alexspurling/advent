@@ -1,11 +1,14 @@
+package day11
+
 use core {println, printf}
 use core.string
 use strings {toStr}
 use core.array
 use core.math
+use common {Pos}
 
 
-day11desc := "Find the shortest path between the observed galaxies";
+desc := "Find the shortest path between the observed galaxies";
 
 
 emptyColumnIndexes :: (map: [] str) -> [] i32 {
@@ -83,7 +86,7 @@ findSumOfShortestPathsBetweenGalaxies :: (sky: [] str, galaxies: [] Pos) -> i32 
 }
 
 
-solve_day_11_part_1 :: () -> str {
+solve_part_1 :: () -> str {
 
     map := string.split(day11input, '\n');
 
@@ -140,7 +143,7 @@ findSumOfShortestPathsBetweenExpandedGalaxies :: (sky: [] str, galaxies: [] Pos,
     return sum;
 }
 
-solve_day_11_part_2 :: () -> str {
+solve_part_2 :: () -> str {
 
     map := string.split(day11input, '\n');
 

@@ -1,3 +1,5 @@
+package day12
+
 use core {println, printf}
 use core.string
 use core.iter
@@ -9,9 +11,10 @@ use core.slice
 use core.hash {
     corehash :: hash
 }
+use common {progress}
 
 
-day12desc := "Count how many possible patterns of working and non-working springs are possible.";
+desc := "Count how many possible patterns of working and non-working springs are possible.";
 
 
 contains :: (input: str, char: u8) -> bool {
@@ -138,13 +141,13 @@ findSolutions :: (records: [] SpringRecord) -> u64 {
     return totalSolutions;
 }
 
-solve_day_12_part_1 :: () -> str {
+solve_part_1 :: () -> str {
     records := parseSpringRecords(day12input);
     totalSolutions : = findSolutions(records);
     return toStr(totalSolutions);
 }
 
-solve_day_12_part_2 :: () -> str {
+solve_part_2 :: () -> str {
     records := parseSpringRecords(day12input);
     records = multiplySpringRecords(records);
     totalSolutions : = findSolutions(records);

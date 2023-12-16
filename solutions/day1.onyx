@@ -1,3 +1,5 @@
+package day1
+
 use core {array, println, printf, tprintf}
 use core.string {index_of, as_str, split}
 use core.conv {str_to_i64}
@@ -6,11 +8,11 @@ use strings
 use strings {toStr}
 
 
-day1desc := "Calculate the calbration values for the trebuchet."
+desc := "Calculate the calbration values for the trebuchet."
 
 
 
-solve_day_1_part_1 :: () -> str {
+solve_part_1 :: () -> str {
     lines := split(day1input, '\n');
 
     calibrationSum := 0;
@@ -25,7 +27,7 @@ solve_day_1_part_1 :: () -> str {
             calibrationSum += ~~str_to_i64(calibrationNum);
         }
     }
-    
+
     return toStr(calibrationSum);
 }
 
@@ -67,7 +69,7 @@ find_last_num :: (string: str) -> ? u8 {
     return .{};
 }
 
-solve_day_1_part_2 :: () -> str {
+solve_part_2 :: () -> str {
     lines := split(day1input, '\n');
     calibrationSum := 0;
 

@@ -1,31 +1,17 @@
+package day10
+
 use core {println, printf}
 use core.string
 use core.set
-use core.hash {
-    corehash :: hash
-}
 use core.iter
 use core.array
-use strings {toStr}
 use core.list
+use strings {toStr}
+use common {Pos, progress}
 
-
-day10desc := "Calculate the length and size of the tile loop."
+desc := "Calculate the length and size of the tile loop."
 
 map: [] str;
-
-Pos :: struct {
-    x: i32;
-    y: i32;
-
-    hash :: (p: Pos) -> i32 {
-        // This is the algorithm Java uses
-        return 31 * 31 * corehash(p.x) * corehash(p.y);
-    }
-}
-#operator == (p1: Pos, p2: Pos) -> bool {
-    return p1.x == p2.x && p1.y == p2.y;
-}
 
 connectLeft :: "SJ-7";
 connectRight :: "SF-L";
@@ -142,7 +128,7 @@ getLoop :: (start: Pos) -> [] Pos {
 }
 
 
-solve_day_10_part_1 :: () -> str {
+solve_part_1 :: () -> str {
 
     startPos := getStartPos();
 
@@ -301,7 +287,7 @@ fillLoop :: (loop: [] Pos, startDirection: Direction) -> i32 {
 }
 
 
-solve_day_10_part_2 :: () -> str {
+solve_part_2 :: () -> str {
 
     startPos := getStartPos();
 

@@ -1,3 +1,5 @@
+package day5
+
 use core {println, printf, range}
 use core.string {split, split_iter}
 use core.iter
@@ -5,8 +7,10 @@ use core.conv {parse_int}
 use core.math
 use core.array
 use strings {toStr}
+use common {progress}
 
-day5desc := "Calculate the location to plant new seeds on Island Island island."
+
+desc := "Calculate the location to plant new seeds on Island Island island."
 
 
 MappingRange :: struct {
@@ -42,7 +46,7 @@ mapTo :: (mapping: Mapping, item: i64) -> i64 {
 MAX_INT64 :: 9223372036854775807;
 
 
-solve_day_5_part_1 :: () -> str {
+solve_part_1 :: () -> str {
 
     seedsArr := split(seeds, ' ') |> iter.as_iter() |> iter.map((s) => parse_int(s)) |> iter.to_array();
 
@@ -121,7 +125,7 @@ seedInRange :: (seedRanges: [] SeedRange, seed: i64) -> bool {
 }
 
 
-solve_day_5_part_2 :: () -> str {
+solve_part_2 :: () -> str {
 
     seedRanges := split(seeds, ' ') |> toSeedRanges();
     seedToSoilMap := parseMap(seedToSoil);

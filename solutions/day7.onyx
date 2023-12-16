@@ -1,3 +1,5 @@
+package day7
+
 use core.iter
 use core.string {split, split_iter, index_of}
 use core {println, printf}
@@ -6,9 +8,10 @@ use core.map
 use core.array
 use core.slice
 use strings {toStr}
+use common {cmp}
 
 
-day7desc := "Calculate the total winnings in the Camel Cards game."
+desc := "Calculate the total winnings in the Camel Cards game."
 
 HandInput :: struct {
     hand: str;
@@ -90,10 +93,6 @@ getHandType :: (hand: str) -> HandType {
 toHand :: (handInput: HandInput) -> Hand {
     type := getHandType(handInput.hand);
     return Hand.{handInput.hand, handInput.bid, type};
-}
-
-cmp :: (num1: $T, num2: T) -> i32 {
-    return 0 if num1 == num2 else (-1) if num1 < num2 else 1;
 }
 
 CARD_SEQUENCE :: "123456789TJQKA";
@@ -189,7 +188,7 @@ compareHandsWithJokers :: (hand1: Hand, hand2: Hand) -> i32 {
     return compareHandWithJokers(hand1.hand, hand2.hand);
 }
 
-solve_day_7_part_1 :: () -> str {
+solve_part_1 :: () -> str {
 
     lines := split(day7input, '\n');
 
@@ -210,7 +209,7 @@ solve_day_7_part_1 :: () -> str {
     return toStr(totalWinnings);
 }
 
-solve_day_7_part_2 :: () -> str {
+solve_part_2 :: () -> str {
 
     lines := split(day7input, '\n');
 

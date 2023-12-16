@@ -1,3 +1,5 @@
+package day3
+
 use core {println, printf}
 use core.string {split}
 use core.iter
@@ -5,7 +7,7 @@ use core.conv {str_to_i64}
 use strings {toStr}
 use strings
 
-day3desc := "Calculate the part numbers for the engine schematic."
+desc := "Calculate the part numbers for the engine schematic."
 
 
 
@@ -20,7 +22,7 @@ surrounding_cells :: (x: i32, y: i32) -> [8] Cell {
              Cell.{x - 1, y + 1}, Cell.{x, y + 1}, Cell.{x + 1, y + 1}];
 }
 
-solve_day_3_part_1 :: () -> str {
+solve_part_1 :: () -> str {
 
     lines := split(day3input, '\n');
 
@@ -87,7 +89,7 @@ getNearbyParts :: (parts: [..] Part, lines: [] str, x: i32, y: i32) -> [..] Part
     return nearbyParts;
 }
 
-solve_day_3_part_2 :: () -> str {
+solve_part_2 :: () -> str {
     lines := split(day3input, '\n');
 
     parts: [..] Part;

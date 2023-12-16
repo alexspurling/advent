@@ -1,3 +1,5 @@
+package day4
+
 use core.iter
 use core.string
 use core.string {index_of, as_str, split, split_iter}
@@ -9,7 +11,7 @@ use core.array
 use strings {toStr}
 
 
-day4desc := "Calculate the winning scratch cards";
+desc := "Calculate the winning scratch cards";
 
 to_set :: #match #local {}
 
@@ -41,7 +43,7 @@ intersection :: (s1: &Set($T), s2: &Set($T)) -> Set(T) {
     return newSet;
 }
 
-solve_day_4_part_1 :: () -> str {
+solve_part_1 :: () -> str {
 
     lines := split(day4input, '\n');
 
@@ -76,7 +78,7 @@ solve_day_4_part_1 :: () -> str {
 }
 
 
-solve_day_4_part_2 :: () -> str {
+solve_part_2 :: () -> str {
 
     lines := split(day4input, '\n');
 

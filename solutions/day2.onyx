@@ -1,3 +1,5 @@
+package day2
+
 use core {array, println, printf, tprintf}
 use core.string {index_of, as_str, split, split_iter}
 use core.iter
@@ -6,7 +8,7 @@ use core.conv {str_to_i64}
 use core.math
 use strings {toStr}
 
-day2desc := "Calculate which games would have been possible."
+desc := "Calculate which games would have been possible."
 
 #load "./strings.onyx"
 
@@ -36,7 +38,7 @@ draw_valid :: (draw: str) -> bool {
 }
 
 
-solve_day_2_part_1 :: () -> str {
+solve_part_1 :: () -> str {
 
     lines := split(day2input, '\n');
 
@@ -100,7 +102,7 @@ toDraw :: (draw: str) -> Draw {
     return Draw.{red, green, blue};
 }
 
-solve_day_2_part_2 :: () -> str {
+solve_part_2 :: () -> str {
 
     powerSum := 0;
 
