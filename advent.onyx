@@ -15,6 +15,7 @@ use day11
 use day12
 use day13
 use day14
+use day15
 
 #export "_initialize" _initialize
 _initialize :: () {
@@ -40,6 +41,7 @@ describe :: (day: i32) -> &str {
         case 12 do return &day12.desc;
         case 13 do return &day13.desc;
         case 14 do return &day14.desc;
+        case 15 do return &day15.desc;
     }
 }
 
@@ -80,10 +82,12 @@ solve :: (day: i32, part: i32) -> &str {
         case .{13, 2} do solution = day13.solve_part_2();
         case .{14, 1} do solution = day14.solve_part_1();
         case .{14, 2} do solution = day14.solve_part_2();
+        case .{15, 1} do solution = day15.solve_part_1();
+        case .{15, 2} do solution = day15.solve_part_2();
     }
     return &solution;
 }
 
 main :: () {
-    printf("Solution: {}\n", *solve(14, 2));
+    printf("Solution: {}\n", *solve(15, 2));
 }

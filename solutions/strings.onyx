@@ -42,7 +42,7 @@ find_last :: #match #local {}
 
 #overload
 find_last :: (arr: [] $T, value: T) -> i32 {
-    for i: range.{arr.count, 0, -1} {
+    for i: range.{arr.count - 1, 0, -1} {
         if value == arr.data[i] do return i;
     }
 
@@ -51,7 +51,7 @@ find_last :: (arr: [] $T, value: T) -> i32 {
 
 #overload
 find_last :: macro (arr: [] $T/type_is_struct, pred: Code) -> i32 {
-    for i: range.{arr.count, 0, -1} {
+    for i: range.{arr.count - 1, 0, -1} {
         it := &arr[i];
         if #unquote pred(it) do return i;
     }
@@ -61,7 +61,7 @@ find_last :: macro (arr: [] $T/type_is_struct, pred: Code) -> i32 {
 
 #overload
 find_last :: macro (arr: [] $T, pred: Code) -> i32 {
-    for i: range.{arr.count, 0, -1} {
+    for i: range.{arr.count - 1, 0, -1} {
         it := arr[i];
         if #unquote pred(it) do return i;
     }
@@ -87,4 +87,12 @@ set_to_str :: (s: &Set($T)) -> str {
     }
     buffer = tprintf("{}]", buffer);
     return buffer;
+}
+
+
+trim :: (s: str) -> str {
+    start := slice.find(s, [c] (c != ' ' && c != '\n'));
+    end := find_last(s, [c] (c != ' ' && c != '\n'));
+
+    return s[start .. (end + 1)];
 }
