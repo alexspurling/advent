@@ -8,7 +8,8 @@ use core.conv
 use core.array
 use core.map
 use core.slice
-
+use common {progress}
+use core.set
 
 desc := "Calculate the load on the platform after tilting it and moving the rocks around.";
 
@@ -21,17 +22,20 @@ Direction :: enum {
     UNKNOWN;
 }
 
-tiltPlatform :: (platform: [] str, direction: Direction) -> [] str {
+tiltPlatform :: (platform: [] str, direction: Direction) {
+
+    height := platform.length;
+    width := platform[0].length;
 
     switch direction {
         case Direction.NORTH {
-            for x: 0 .. platform[0].count {
+            for x: 0 .. width {
                 // If we tilt to the north then we need to scan top to bottom
                 y := 0;
-                while y < platform.count {
+                while y < height {
                     if platform[y][x] == '.' {
                         // This gap needs to be filled
-                        for y2: y + 1 .. platform.count {
+                        for y2: y + 1 .. height {
                             if platform[y2][x] == 'O' {
                                 // Move the rock up
                                 platform[y][x] = 'O';
@@ -48,9 +52,82 @@ tiltPlatform :: (platform: [] str, direction: Direction) -> [] str {
                 }
             }
         }
+        case Direction.SOUTH {
+            for x: 0 .. width {
+                // If we tilt to the south then we need to scan bottom to top
+                y: i32 = height - 1; // This needs to be a signed integer so we know when it goes below 0
+                while y >= 0 {
+                    if platform[y][x] == '.' {
+                        // This gap needs to be filled
+                        for y2: range.{y - 1, 0, -1} {
+                            if platform[y2][x] == 'O' {
+                                // Move the rock down
+                                platform[y][x] = 'O';
+                                platform[y2][x] = '.';
+                                break;
+                            } elseif platform[y2][x] == '#' {
+                                // Skip to the next immovable rock
+                                y = y2;
+                                break;
+                            }
+                        }
+                    }
+                    y -= 1;
+                }
+            }
+        }
+        case Direction.WEST {
+            for y: 0 .. height {
+                // If we tilt to the north then we need to scan top to bottom
+                x := 0;
+                while x < width {
+                    if platform[y][x] == '.' {
+                        // This gap needs to be filled
+                        for x2: x + 1 .. width {
+                            if platform[y][x2] == 'O' {
+                                // Move the rock up
+                                platform[y][x] = 'O';
+                                platform[y][x2] = '.';
+                                break;
+                            } elseif platform[y][x2] == '#' {
+                                // Skip to the next immovable rock
+                                x = x2;
+                                break;
+                            }
+                        }
+                    }
+                    if x > 1000 {
+                        break;
+                    }
+                    x += 1;
+                }
+            }
+        }
+        case Direction.EAST {
+            for y: 0 .. height {
+                // If we tilt to the south then we need to scan bottom to top
+                x: i32 = width - 1; // This needs to be a signed integer so we know when it goes below 0
+                while x >= 0 {
+                    if platform[y][x] == '.' {
+                        // This gap needs to be filled
+                        for x2: range.{x - 1, 0, -1} {
+                            if platform[y][x2] == 'O' {
+                                // Move the rock down
+                                platform[y][x] = 'O';
+                                platform[y][x2] = '.';
+                                break;
+                            } elseif platform[y][x2] == '#' {
+                                // Skip to the next immovable rock
+                                x = x2;
+                                break;
+                            }
+                        }
+                    }
+                    x -= 1;
+                }
+            }
+        }
     }
-
-    return platform;
 }
 
 calculateWeight :: (platform: [] str) -> i32 {
@@ -76,14 +153,46 @@ printPlatform :: (platform: [] str) {
 
 solve_part_1 :: () -> str {
     platform := string.split(day14Input, '\n');
-    platform = tiltPlatform(platform, Direction.NORTH);
-    printPlatform(platform);
+    tiltPlatform(platform, Direction.NORTH);
     totalWeight := calculateWeight(platform);
     return toStr(totalWeight);
 }
 
+spin :: (platform: [] str, n: i32) {
+
+    seenPlatforms := array.make(str);
+    i := 1;
+    period := 0;
+
+    while (i <= n) {
+        tiltPlatform(platform, Direction.NORTH);
+        tiltPlatform(platform, Direction.WEST);
+        tiltPlatform(platform, Direction.SOUTH);
+        tiltPlatform(platform, Direction.EAST);
+
+        platformStr := string.join(platform, "");
+
+        existingPlatform := array.find(seenPlatforms, platformStr);
+
+        if period == 0 && existingPlatform >= 0 {
+            period = i - (existingPlatform + 1);
+
+            skip := ((((n - 1) - i) / period) * period) + i;
+            i = skip;
+        }
+
+        i += 1;
+
+        seenPlatforms << platformStr;
+    }
+}
+
+
 solve_part_2 :: () -> str {
-    return toStr(0);
+    platform := string.split(day14Input, '\n');
+    spin(platform, 1000000000);
+    totalWeight := calculateWeight(platform);
+    return toStr(totalWeight);
 }
 
 
