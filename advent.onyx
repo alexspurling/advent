@@ -18,13 +18,6 @@ use day14
 use day15
 use day16
 
-#export "_initialize" _initialize
-_initialize :: () {
-    use runtime;
-    runtime.__runtime_initialize();
-    context.thread_id = 0;
-}
-
 #export "describe" describe
 describe :: (day: i32) -> &str {
     switch day {
@@ -93,5 +86,5 @@ solve :: (day: i32, part: i32) -> &str {
 }
 
 main :: () {
-    printf("Solution: {}\n", *solve(16, 2));
+    printf("Solution: {}\n", *solve(16, 1));
 }

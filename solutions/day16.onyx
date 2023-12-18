@@ -98,15 +98,15 @@ fireTheLasers :: (room: [] str, startPos: Pos, startDirection: Direction) -> Map
         if map.has(&grid, pos) {
             // the beam has already passed through this location. if we are currently going in the same direction then
             // we can stop iterating this branch.
-            directionSet := map.get(&grid, pos)->unwrap();
+            directionSet := map.get_ptr(&grid, pos);
 
-            if set.has(&directionSet, direction) {
+            if set.has(directionSet, direction) {
                 // printf("Already explored this cell and direction\n");
                 continue;
             }
 
             // Otherwise, simply add the current direction to the list.
-            set.insert(&directionSet, direction);
+            set.insert(directionSet, direction);
         } else {
             // Add this beam to the energy grid
             directionSet := set.make(Direction);
@@ -115,8 +115,6 @@ fireTheLasers :: (room: [] str, startPos: Pos, startDirection: Direction) -> Map
         }
 
         dir1, dir2 := getNextDirections(tile, curPosAndDirection.direction);
-
-        printf("Got dirs: {}, {}\n", dir1, dir2);
 
         nextDirections := .[dir1, dir2];
 
@@ -142,8 +140,8 @@ countEnergisedCells :: (grid: &Map(Pos, Set(Direction))) -> i32 {
 }
 
 solve_part_1 :: () -> str {
-    day16Input := #file_contents "inputs/day16.txt";
-    room := string.split(day16Input, '\n');
+    // day16Input := #file_contents "inputs/day16.txt";
+    room := string.split(exampleInput, '\n');
     grid := fireTheLasers(room, Pos.{0, 0}, Direction.EAST);
     energisedCells := countEnergisedCells(&grid);
     return toStr(energisedCells);
