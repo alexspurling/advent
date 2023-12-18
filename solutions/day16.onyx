@@ -86,7 +86,7 @@ fireTheLasers :: (room: [] str, startPos: Pos, startDirection: Direction) -> Map
 
     n := 0;
 
-    while queue.first != null {
+    while !list.empty(&queue) {
         curPosAndDirection := list.pop_begin(&queue);
 
         pos := curPosAndDirection.pos;
