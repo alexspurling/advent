@@ -1,0 +1,160 @@
+package day16
+
+use core.list
+use core.set
+use core.slice
+use core.conv
+use core.array
+use core.map
+use core.string
+use core {println, printf}
+use strings {toStr, trim}
+use common {Pos}
+
+
+desc := "Find the cells energised by the laser beam.";
+
+Direction :: enum {
+    NORTH; SOUTH; EAST; WEST; UNKNOWN;
+}
+
+
+getNextDirections :: (tile: u8, direction: Direction) -> [] Direction {
+    newDirs := array.make(Direction);
+    switch tile {
+        case '-' {
+            if direction == Direction.NORTH || direction == Direction.SOUTH {
+                array.concat(&newDirs, .[Direction.WEST, Direction.EAST]);
+            }
+        }
+        case '|' {
+            if direction == Direction.EAST || direction == Direction.WEST {
+                array.concat(&newDirs, .[Direction.NORTH, Direction.SOUTH]);
+            }
+        }
+        case '/' {
+            switch direction {
+                case Direction.NORTH do newDirs << Direction.EAST;
+                case Direction.SOUTH do newDirs << Direction.WEST;
+                case Direction.EAST do newDirs << Direction.NORTH;
+                case Direction.WEST do newDirs << Direction.SOUTH;
+            }
+        }
+        case '\\' {
+            switch direction {
+                case Direction.NORTH do newDirs << Direction.WEST;
+                case Direction.SOUTH do newDirs << Direction.EAST;
+                case Direction.EAST do newDirs << Direction.SOUTH;
+                case Direction.WEST do newDirs << Direction.NORTH;
+            }
+        }
+    }
+    if array.empty(newDirs) {
+        newDirs << direction;
+    }
+    return newDirs;
+}
+
+getNextPos :: (pos: Pos, direction: Direction) -> Pos {
+    switch direction {
+        case Direction.NORTH do return Pos.{pos.x, pos.y - 1};
+        case Direction.SOUTH do return Pos.{pos.x, pos.y + 1};
+        case Direction.EAST do return Pos.{pos.x + 1, pos.y};
+        case Direction.WEST do return Pos.{pos.x - 1, pos.y};
+    }
+    return pos;
+}
+
+PosAndDirection :: struct {
+    pos: Pos;
+    direction: Direction;
+}
+
+fireTheLasers :: (room: [] str) -> Map(Pos, Set(u32)) {
+
+    grid := map.make(Pos, Set(u32)); // For some reason we cannot create Maps or Sets of enums so we have to use the underlying value (u32)
+
+    startPos := Pos.{0, 0};
+    startDirection := Direction.EAST;
+
+    queue := list.make(PosAndDirection);
+
+    queue.push_end(&queue, PosAndDirection.{startPos, startDirection});
+
+    n := 0;
+
+    while !list.empty(&queue) {
+        curPosAndDirection := list.pop_begin(&queue);
+
+        pos := curPosAndDirection.pos;
+        direction := curPosAndDirection.direction;
+        tile := room[pos.y][pos.x];
+
+        printf("Pos: {}, tile: {}, dir: {}, n: {}\n", pos, tile, direction, n);
+
+        if map.has(&grid, pos) {
+            // the beam has already passed through this location. if we are currently going in the same direction then
+            // we can stop iterating this branch.
+            directionSet := map.get(&grid, pos)->unwrap();
+
+            printf("Existing directions: {}\n", directionSet.entries);
+
+            if set.has(&directionSet, cast(u32) direction) {
+                printf("Already explored this cell and direction\n");
+                continue;
+            }
+
+            // Otherwise, simply add the current direction to the list.
+            set.insert(&directionSet, cast(u32) direction);
+        } else {
+            // Add this beam to the energy grid
+            directionSet := set.make(u32);
+            set.insert(&directionSet, cast(u32) direction);
+            map.put(&grid, pos, directionSet);
+        }
+
+        nextDirections := getNextDirections(tile, curPosAndDirection.direction);
+
+        for nextDirection: nextDirections {
+            nextPos := getNextPos(pos, nextDirection);
+            if nextPos.x >= 0 && nextPos.y >= 0 && nextPos.x < room[0].length && nextPos.y < room.length {
+                queue.push_end(&queue, PosAndDirection.{nextPos, nextDirection});
+            }
+        }
+
+        n += 1;
+    }
+
+    return grid;
+}
+
+countEnergisedCells :: (grid: &Map(Pos, Set(u32))) -> i32 {
+    totalCells := 0;
+    for cell: map.as_iter(grid) {
+        totalCells += cell.value.entries.count;
+    }
+    return totalCells;
+}
+
+solve_part_1 :: () -> str {
+    day15Input := #file_contents "inputs/day16.txt";
+    room := string.split(day15Input, '\n');
+    grid := fireTheLasers(room);
+    energisedCells := countEnergisedCells(&grid);
+    return toStr(energisedCells);
+}
+
+solve_part_2 :: () -> str {
+    return "";
+}
+
+exampleInput := """.|...\\....
+|.-.\\.....
+.....|-...
+........|.
+..........
+.........\
+..../.\\\\..
+.-.-/..|..
+.|....-|.\\
+..//.|....""";
