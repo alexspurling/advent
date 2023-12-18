@@ -181,7 +181,7 @@ fill :: (start: Pos, loop: [] Pos) -> i32 {
     queue := list.make(Pos);
     list.push_begin(&queue, start);
 
-    while !list.empty(&queue) {
+    while queue.last != null {
         nextTile := list.pop_end(&queue);
 
         neighbours := getNeighbours(nextTile);

@@ -1,5 +1,6 @@
 package day16
 
+use core.math
 use core.list
 use core.set
 use core.slice
@@ -70,12 +71,9 @@ PosAndDirection :: struct {
     direction: Direction;
 }
 
-fireTheLasers :: (room: [] str) -> Map(Pos, Set(u32)) {
+fireTheLasers :: (room: [] str, startPos: Pos, startDirection: Direction) -> Map(Pos, Set(u32)) {
 
     grid := map.make(Pos, Set(u32)); // For some reason we cannot create Maps or Sets of enums so we have to use the underlying value (u32)
-
-    startPos := Pos.{0, 0};
-    startDirection := Direction.EAST;
 
     queue := list.make(PosAndDirection);
 
@@ -83,7 +81,7 @@ fireTheLasers :: (room: [] str) -> Map(Pos, Set(u32)) {
 
     n := 0;
 
-    while !list.empty(&queue) {
+    while queue.first != null {
         curPosAndDirection := list.pop_begin(&queue);
 
         pos := curPosAndDirection.pos;
@@ -97,16 +95,15 @@ fireTheLasers :: (room: [] str) -> Map(Pos, Set(u32)) {
             // we can stop iterating this branch.
             directionSet := map.get(&grid, pos)->unwrap();
 
-            printf("Existing directions: {}\n", directionSet.entries);
-
             if set.has(&directionSet, cast(u32) direction) {
-                printf("Already explored this cell and direction\n");
+                // printf("Already explored this cell and direction\n");
                 continue;
             }
 
             // Otherwise, simply add the current direction to the list.
             set.insert(&directionSet, cast(u32) direction);
         } else {
+            printf("No directions: {}\n");
             // Add this beam to the energy grid
             directionSet := set.make(u32);
             set.insert(&directionSet, cast(u32) direction);
@@ -137,15 +134,51 @@ countEnergisedCells :: (grid: &Map(Pos, Set(u32))) -> i32 {
 }
 
 solve_part_1 :: () -> str {
-    day15Input := #file_contents "inputs/day16.txt";
-    room := string.split(day15Input, '\n');
-    grid := fireTheLasers(room);
+    day16Input := #file_contents "inputs/day16.txt";
+    room := string.split(day16Input, '\n');
+    grid := fireTheLasers(room, Pos.{0, 0}, Direction.EAST);
     energisedCells := countEnergisedCells(&grid);
     return toStr(energisedCells);
 }
 
 solve_part_2 :: () -> str {
-    return "";
+    day16Input := #file_contents "inputs/day16.txt";
+    room := string.split(day16Input, '\n');
+
+    maxEnergisedCells := 0;
+    for x: 36 .. room[0].length {
+        dir := Direction.SOUTH;
+        grid := fireTheLasers(room, Pos.{x, 0}, dir);
+        energisedCells := countEnergisedCells(&grid);
+        maxEnergisedCells = math.max(maxEnergisedCells, energisedCells);
+        printf("x: {}, y: 0, dir: {}, energised cells: {}\n", x, dir, energisedCells);
+    }
+
+    for y: 0 .. room.length {
+        dir := Direction.EAST;
+        grid := fireTheLasers(room, Pos.{0, y}, dir);
+        energisedCells := countEnergisedCells(&grid);
+        maxEnergisedCells = math.max(maxEnergisedCells, energisedCells);
+        printf("x: 0, y: {}, dir: {}, energised cells: {}\n", y, dir, energisedCells);
+    }
+
+    for x: 0 .. room[0].length {
+        dir := Direction.NORTH;
+        grid := fireTheLasers(room, Pos.{x, room.length}, dir);
+        energisedCells := countEnergisedCells(&grid);
+        maxEnergisedCells = math.max(maxEnergisedCells, energisedCells);
+        printf("x: {}, y: {}, dir: {}, energised cells: {}\n", x, room.length, dir, energisedCells);
+    }
+
+    for y: 0 .. room.length {
+        dir := Direction.WEST;
+        grid := fireTheLasers(room, Pos.{room[0].length, y}, dir);
+        energisedCells := countEnergisedCells(&grid);
+        maxEnergisedCells = math.max(maxEnergisedCells, energisedCells);
+        printf("x: {}, y: {}, dir: {}, energised cells: {}\n", room[0].length, y, dir, energisedCells);
+    }
+
+    return toStr(maxEnergisedCells);
 }
 
 exampleInput := """.|...\\....
