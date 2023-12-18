@@ -8,6 +8,7 @@ use core.conv
 use core.array
 use core.map
 use core.string
+use core.hash
 use core {println, printf}
 use strings {toStr, trim}
 use common {Pos}
@@ -17,6 +18,14 @@ desc := "Find the cells energised by the laser beam.";
 
 Direction :: enum {
     NORTH; SOUTH; EAST; WEST; UNKNOWN;
+}
+#inject
+Direction.hash :: (d: Direction) -> u32 {
+    return hash.hash(cast(u32) d);
+}
+#overload
+hash.hash :: (d: Direction) -> u32 {
+    return hash.hash(cast(u32) d);
 }
 
 
@@ -71,9 +80,9 @@ PosAndDirection :: struct {
     direction: Direction;
 }
 
-fireTheLasers :: (room: [] str, startPos: Pos, startDirection: Direction) -> Map(Pos, Set(u32)) {
+fireTheLasers :: (room: [] str, startPos: Pos, startDirection: Direction) -> Map(Pos, Set(Direction)) {
 
-    grid := map.make(Pos, Set(u32)); // For some reason we cannot create Maps or Sets of enums so we have to use the underlying value (u32)
+    grid := map.make(Pos, Set(Direction)); // For some reason we cannot create Maps or Sets of enums so we have to use the underlying value (u32)
 
     queue := list.make(PosAndDirection);
 
@@ -95,18 +104,18 @@ fireTheLasers :: (room: [] str, startPos: Pos, startDirection: Direction) -> Map
             // we can stop iterating this branch.
             directionSet := map.get(&grid, pos)->unwrap();
 
-            if set.has(&directionSet, cast(u32) direction) {
+            if set.has(&directionSet, direction) {
                 // printf("Already explored this cell and direction\n");
                 continue;
             }
 
             // Otherwise, simply add the current direction to the list.
-            set.insert(&directionSet, cast(u32) direction);
+            set.insert(&directionSet, direction);
         } else {
             printf("No directions: {}\n");
             // Add this beam to the energy grid
-            directionSet := set.make(u32);
-            set.insert(&directionSet, cast(u32) direction);
+            directionSet := set.make(Direction);
+            set.insert(&directionSet, direction);
             map.put(&grid, pos, directionSet);
         }
 
@@ -125,7 +134,7 @@ fireTheLasers :: (room: [] str, startPos: Pos, startDirection: Direction) -> Map
     return grid;
 }
 
-countEnergisedCells :: (grid: &Map(Pos, Set(u32))) -> i32 {
+countEnergisedCells :: (grid: &Map(Pos, Set(Direction))) -> i32 {
     totalCells := 0;
     for cell: map.as_iter(grid) {
         totalCells += cell.value.entries.count;
