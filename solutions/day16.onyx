@@ -29,40 +29,36 @@ hash.hash :: (d: Direction) -> u32 {
 }
 
 
-getNextDirections :: (tile: u8, direction: Direction) -> [] Direction {
-    newDirs := array.make(Direction);
+getNextDirections :: (tile: u8, direction: Direction) -> (Direction, Direction) {
     switch tile {
         case '-' {
             if direction == Direction.NORTH || direction == Direction.SOUTH {
-                array.concat(&newDirs, .[Direction.WEST, Direction.EAST]);
+                return (Direction.WEST, Direction.EAST);
             }
         }
         case '|' {
             if direction == Direction.EAST || direction == Direction.WEST {
-                array.concat(&newDirs, .[Direction.NORTH, Direction.SOUTH]);
+                return (Direction.NORTH, Direction.SOUTH);
             }
         }
         case '/' {
             switch direction {
-                case Direction.NORTH do newDirs << Direction.EAST;
-                case Direction.SOUTH do newDirs << Direction.WEST;
-                case Direction.EAST do newDirs << Direction.NORTH;
-                case Direction.WEST do newDirs << Direction.SOUTH;
+                case Direction.NORTH do return (Direction.EAST, Direction.EAST);
+                case Direction.SOUTH do return (Direction.WEST, Direction.WEST);
+                case Direction.EAST do return (Direction.NORTH, Direction.NORTH);
+                case Direction.WEST do return (Direction.SOUTH, Direction.SOUTH);
             }
         }
         case '\\' {
             switch direction {
-                case Direction.NORTH do newDirs << Direction.WEST;
-                case Direction.SOUTH do newDirs << Direction.EAST;
-                case Direction.EAST do newDirs << Direction.SOUTH;
-                case Direction.WEST do newDirs << Direction.NORTH;
+                case Direction.NORTH do return (Direction.WEST, Direction.WEST);
+                case Direction.SOUTH do return (Direction.EAST, Direction.EAST);
+                case Direction.EAST do return (Direction.SOUTH, Direction.SOUTH);
+                case Direction.WEST do return (Direction.NORTH, Direction.NORTH);
             }
         }
     }
-    if array.empty(newDirs) {
-        newDirs << direction;
-    }
-    return newDirs;
+    return (direction, direction);
 }
 
 getNextPos :: (pos: Pos, direction: Direction) -> Pos {
@@ -97,7 +93,7 @@ fireTheLasers :: (room: [] str, startPos: Pos, startDirection: Direction) -> Map
         direction := curPosAndDirection.direction;
         tile := room[pos.y][pos.x];
 
-        printf("Pos: {}, tile: {}, dir: {}, n: {}\n", pos, tile, direction, n);
+        printf("Pos: {}, dir: {}, tile: {}, n: {}\n", pos, direction, tile, n);
 
         if map.has(&grid, pos) {
             // the beam has already passed through this location. if we are currently going in the same direction then
@@ -112,14 +108,17 @@ fireTheLasers :: (room: [] str, startPos: Pos, startDirection: Direction) -> Map
             // Otherwise, simply add the current direction to the list.
             set.insert(&directionSet, direction);
         } else {
-            printf("No directions: {}\n");
             // Add this beam to the energy grid
             directionSet := set.make(Direction);
             set.insert(&directionSet, direction);
             map.put(&grid, pos, directionSet);
         }
 
-        nextDirections := getNextDirections(tile, curPosAndDirection.direction);
+        dir1, dir2 := getNextDirections(tile, curPosAndDirection.direction);
+
+        printf("Got dirs: {}, {}\n", dir1, dir2);
+
+        nextDirections := .[dir1, dir2];
 
         for nextDirection: nextDirections {
             nextPos := getNextPos(pos, nextDirection);
