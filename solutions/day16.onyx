@@ -11,7 +11,7 @@ use core.string
 use core.hash
 use core {println, printf}
 use strings {toStr, trim}
-use common {Pos}
+use common {Pos, progress}
 
 
 desc := "Find the cells energised by the laser beam.";
@@ -78,7 +78,7 @@ PosAndDirection :: struct {
 
 fireTheLasers :: (room: [] str, startPos: Pos, startDirection: Direction) -> Map(Pos, Set(Direction)) {
 
-    grid := map.make(Pos, Set(Direction)); // For some reason we cannot create Maps or Sets of enums so we have to use the underlying value (u32)
+    grid := map.make(Pos, Set(Direction));
 
     queue := list.make(PosAndDirection);
 
@@ -93,7 +93,7 @@ fireTheLasers :: (room: [] str, startPos: Pos, startDirection: Direction) -> Map
         direction := curPosAndDirection.direction;
         tile := room[pos.y][pos.x];
 
-        printf("Pos: {}, dir: {}, tile: {}, n: {}\n", pos, direction, tile, n);
+        // printf("Pos: {}, dir: {}, tile: {}, n: {}\n", pos, direction, tile, n);
 
         if map.has(&grid, pos) {
             // the beam has already passed through this location. if we are currently going in the same direction then
@@ -131,19 +131,11 @@ fireTheLasers :: (room: [] str, startPos: Pos, startDirection: Direction) -> Map
     return grid;
 }
 
-countEnergisedCells :: (grid: &Map(Pos, Set(Direction))) -> i32 {
-    totalCells := 0;
-    for cell: map.as_iter(grid) {
-        totalCells += cell.value.entries.count;
-    }
-    return totalCells;
-}
-
 solve_part_1 :: () -> str {
-    // day16Input := #file_contents "inputs/day16.txt";
-    room := string.split(exampleInput, '\n');
+    day16Input := #file_contents "inputs/day16.txt";
+    room := string.split(day16Input, '\n');
     grid := fireTheLasers(room, Pos.{0, 0}, Direction.EAST);
-    energisedCells := countEnergisedCells(&grid);
+    energisedCells := grid.entries.count;
     return toStr(energisedCells);
 }
 
@@ -151,37 +143,39 @@ solve_part_2 :: () -> str {
     day16Input := #file_contents "inputs/day16.txt";
     room := string.split(day16Input, '\n');
 
+    n: f64 = 0;
+    totalLasers: f64 = cast(f64) (2 * (room.length + room[0].length));
     maxEnergisedCells := 0;
-    for x: 36 .. room[0].length {
-        dir := Direction.SOUTH;
-        grid := fireTheLasers(room, Pos.{x, 0}, dir);
-        energisedCells := countEnergisedCells(&grid);
+    for x: 0 .. room[0].length {
+        grid := fireTheLasers(room, Pos.{x, 0}, Direction.SOUTH);
+        energisedCells := grid.entries.count;
         maxEnergisedCells = math.max(maxEnergisedCells, energisedCells);
-        printf("x: {}, y: 0, dir: {}, energised cells: {}\n", x, dir, energisedCells);
+        progress(100 * n / totalLasers);
+        n += 1;
     }
 
     for y: 0 .. room.length {
-        dir := Direction.EAST;
-        grid := fireTheLasers(room, Pos.{0, y}, dir);
-        energisedCells := countEnergisedCells(&grid);
+        grid := fireTheLasers(room, Pos.{0, y}, Direction.EAST);
+        energisedCells := grid.entries.count;
         maxEnergisedCells = math.max(maxEnergisedCells, energisedCells);
-        printf("x: 0, y: {}, dir: {}, energised cells: {}\n", y, dir, energisedCells);
+        progress(100 * n / totalLasers);
+        n += 1;
     }
 
     for x: 0 .. room[0].length {
-        dir := Direction.NORTH;
-        grid := fireTheLasers(room, Pos.{x, room.length}, dir);
-        energisedCells := countEnergisedCells(&grid);
+        grid := fireTheLasers(room, Pos.{x, room.length - 1}, Direction.NORTH);
+        energisedCells := grid.entries.count;
         maxEnergisedCells = math.max(maxEnergisedCells, energisedCells);
-        printf("x: {}, y: {}, dir: {}, energised cells: {}\n", x, room.length, dir, energisedCells);
+        progress(100 * n / totalLasers);
+        n += 1;
     }
 
     for y: 0 .. room.length {
-        dir := Direction.WEST;
-        grid := fireTheLasers(room, Pos.{room[0].length, y}, dir);
-        energisedCells := countEnergisedCells(&grid);
+        grid := fireTheLasers(room, Pos.{room[0].length - 1, y}, Direction.WEST);
+        energisedCells := grid.entries.count;
         maxEnergisedCells = math.max(maxEnergisedCells, energisedCells);
-        printf("x: {}, y: {}, dir: {}, energised cells: {}\n", room[0].length, y, dir, energisedCells);
+        progress(100 * n / totalLasers);
+        n += 1;
     }
 
     return toStr(maxEnergisedCells);
