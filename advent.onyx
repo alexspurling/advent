@@ -17,6 +17,7 @@ use day13
 use day14
 use day15
 use day16
+use day17
 
 #export "describe" describe
 describe :: (day: i32) -> &str {
@@ -37,6 +38,7 @@ describe :: (day: i32) -> &str {
         case 14 do return &day14.desc;
         case 15 do return &day15.desc;
         case 16 do return &day16.desc;
+        case 17 do return &day17.desc;
     }
 }
 
@@ -81,10 +83,12 @@ solve :: (day: i32, part: i32) -> &str {
         case .{15, 2} do solution = day15.solve_part_2();
         case .{16, 1} do solution = day16.solve_part_1();
         case .{16, 2} do solution = day16.solve_part_2();
+        case .{17, 1} do solution = day17.solve_part_1();
+        case .{17, 2} do solution = day17.solve_part_2();
     }
     return &solution;
 }
 
 main :: () {
-    printf("Solution: {}\n", *solve(16, 2));
+    printf("Solution: {}\n", *solve(17, 1));
 }

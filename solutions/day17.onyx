@@ -1,0 +1,163 @@
+package day17
+
+use core
+use core.iter
+use core.map
+use core {println, printf}
+use core.string
+use core.array
+use core.set
+use core.conv {parse_int}
+use strings {toStr}
+use common {Pos, cmp}
+
+desc := "Find the best path to transport the lava crucible through the city from the laval pool to the machine parts factory."
+
+
+Node :: struct {
+    pos: Pos;
+    distance: i32;
+}
+#operator == (n1: Node, n2: Node) -> bool {
+    return n1.pos == n2.pos && n1.distance == n2.distance;
+}
+#operator < (n1: Node, n2: Node) -> bool {
+    return n1.distance < n2.distance;
+}
+
+MAX_INT :: 2000000000;
+
+
+
+
+getNeighbours :: (p: Pos) -> [..] Pos {
+    neighbours := array.make(Pos, allocator=context.temp_allocator); // Todo check if we need to use the temp allocator here
+
+    neighbours << Pos.{p.x - 1, p.y};
+    neighbours << Pos.{p.x + 1, p.y};
+    neighbours << Pos.{p.x, p.y - 1};
+    neighbours << Pos.{p.x, p.y + 1};
+
+    return neighbours;
+}
+
+
+getCityCost :: (city: [] str, pos: Pos) -> i32 {
+    costChar := city[pos.y][pos.x];
+    costInt := cast(i32) costChar;
+    return costInt - 48;
+}
+
+
+getShortestPath :: (city: [] str, startPos: Pos, targetPos: Pos) -> i32 {
+
+    distances := map.make(Pos, i32);
+    unvisited := set.make(Pos);
+    queue := array.make(Pos);
+    prev := map.make(Pos, Pos);
+
+    for y: 0 .. city.length {
+        for x: 0 .. city[0].length {
+            pos := Pos.{x, y};
+            map.put(&distances, pos, MAX_INT);
+            set.insert(&unvisited, pos);
+            queue << pos;
+        }
+    }
+
+    map.put(&distances, startPos, getCityCost(city, startPos));
+
+    sortedQueue := array.sort(queue, (p1, p2, [distances]) => comparePositionsByDistance(p1, p2, &distances));
+
+    while !array.empty(sortedQueue) {
+        curPos := sortedQueue[0];
+        sortedQueue = sortedQueue[1 .. sortedQueue.length]; // remove the first item from the queue
+
+        curDistance := map.get(&distances, curPos)->value_or(MAX_INT);
+
+        printf("Cur pos: {}, distance: {}\n", curPos, curDistance);
+
+        neighbours := getNeighbours(curPos);
+        for neighbour: neighbours {
+            if (neighbour.x >= 0  && neighbour.y >= 0 && neighbour.x < city[0].length && neighbour.y < city.length &&
+                set.has(&unvisited, neighbour)) {
+                blockCost := getCityCost(city, neighbour);
+                neighbourDistance := curDistance + blockCost;
+                printf("Neighbour: {}, distance: {}\n", neighbour, neighbourDistance);
+                if neighbourDistance < map.get(&distances, neighbour)->value_or(MAX_INT) {
+                    map.put(&distances, neighbour, neighbourDistance);
+                    map.put(&prev, neighbour, curPos);
+                }
+            }
+        }
+        set.remove(&unvisited, curPos);
+
+        // Sort the queue - even though array.sort uses insertion sort, since the array is already mostly sorted this is relatively fast.
+        sortedQueue = array.sort(sortedQueue, (p1, p2, [distances]) => comparePositionsByDistance(p1, p2, &distances));
+    }
+
+    path := array.make(Pos);
+    pathCost := 0;
+    u := targetPos;
+    while map.has(&prev, u) {
+        path << u;
+        pathCost += getCityCost(city, u);
+        println(u);
+        u = map.get(&prev, u)->unwrap();
+    }
+    // Add the start node to the path
+    path << u;
+    pathCost += getCityCost(city, u);
+
+    // Reverse the path
+    array.reverse(path);
+
+    printf("Path len: {}, cost: {}, path: {}\n", path.length, pathCost, path);
+
+    for p: path {
+        printf("{}, {}, {}\n", p.x, p.y, city[p.y][p.x]);
+    }
+
+    return pathCost;
+}
+
+comparePositionsByDistance :: (p1: Pos, p2: Pos, distances: &Map(Pos, i32)) -> i32 {
+    return cmp(map.get(distances, p1)->value_or(MAX_INT), map.get(distances, p2)->value_or(MAX_INT));
+}
+
+
+getPathCost :: (city: [] str, path: [] Pos) -> i32 {
+    return iter.as_iter(path)
+        |> iter.map((p, [city]) => getCityCost(city, *p))
+        |> iter.fold(0, (n, a) => a + n);
+}
+
+
+solve_part_1 :: () -> str {
+    city := string.split(exampleInput, '\n');
+    shortestPath := getShortestPath(city, Pos.{0, 0}, Pos.{city[0].length - 1, city.length - 1});
+
+    printf("Shortest path: {}\n", shortestPath);
+
+    return toStr(shortestPath);
+}
+
+
+solve_part_2 :: () -> str {
+    return "";
+}
+
+
+exampleInput := """2413432311323
+3215453535623
+3255245654254
+3446585845452
+4546657867536
+1438598798454
+4457876987766
+3637877979653
+4654967986887
+4564679986453
+1224686865563
+2546548887735
+4322674655533""";
