@@ -48,6 +48,27 @@ getCityCost :: (city: [] str, pos: Pos) -> i32 {
     return costInt - 48;
 }
 
+getPathFromPrevChain :: (city: [] str, targetPos: Pos, prev: &Map(Pos, Pos)) -> ([] Pos, i32) {
+    path := array.make(Pos);
+    pathCost := 0;
+    u := targetPos;
+    while map.has(prev, u) {
+        path << u;
+        pathCost += getCityCost(city, u);
+        u = map.get(prev, u)->unwrap();
+    }
+    if !array.empty(path) {
+        // Add the start node to the path
+        path << u;
+        pathCost += getCityCost(city, u);
+    }
+
+    // Reverse the path
+    array.reverse(path);
+
+    return path, pathCost;
+}
+
 
 getShortestPath :: (city: [] str, startPos: Pos, targetPos: Pos) -> i32 {
 
@@ -87,6 +108,9 @@ getShortestPath :: (city: [] str, startPos: Pos, targetPos: Pos) -> i32 {
                 if neighbourDistance < map.get(&distances, neighbour)->value_or(MAX_INT) {
                     map.put(&distances, neighbour, neighbourDistance);
                     map.put(&prev, neighbour, curPos);
+                    path, cost := getPathFromPrevChain(city, neighbour, &prev);
+
+                    printf("Path cost: {}, path: {}\n", cost, path);
                 }
             }
         }
@@ -96,26 +120,12 @@ getShortestPath :: (city: [] str, startPos: Pos, targetPos: Pos) -> i32 {
         sortedQueue = array.sort(sortedQueue, (p1, p2, [distances]) => comparePositionsByDistance(p1, p2, &distances));
     }
 
-    path := array.make(Pos);
-    pathCost := 0;
-    u := targetPos;
-    while map.has(&prev, u) {
-        path << u;
-        pathCost += getCityCost(city, u);
-        println(u);
-        u = map.get(&prev, u)->unwrap();
-    }
-    // Add the start node to the path
-    path << u;
-    pathCost += getCityCost(city, u);
-
-    // Reverse the path
-    array.reverse(path);
+    path, pathCost := getPathFromPrevChain(city, targetPos, &prev);
 
     printf("Path len: {}, cost: {}, path: {}\n", path.length, pathCost, path);
 
     for p: path {
-        printf("{}, {}, {}\n", p.x, p.y, city[p.y][p.x]);
+        printf("({}, {}): {}\n", p.x, p.y, city[p.y][p.x]);
     }
 
     return pathCost;
