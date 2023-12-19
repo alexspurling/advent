@@ -69,6 +69,29 @@ getPathFromPrevChain :: (city: [] str, targetPos: Pos, prev: &Map(Pos, Pos)) -> 
     return path, pathCost;
 }
 
+tooManyConsecutiveBlocks :: (prev: &Map(Pos, Pos), curPos: Pos, nextPos: Pos) -> bool {
+    // Return true if the next position would mean the path has too many consecutive blocks
+
+    // Iterate over the previous 3 positions. If they all match one of the X or Y
+    // dimensions then they must be on a straight path with the next position
+    allMatchX := curPos.x == nextPos.x;
+    allMatchY := curPos.y == nextPos.y;
+    n := 0;
+    nSquaresBack := curPos;
+    while map.has(prev, nSquaresBack) && n < 3 {
+        nSquaresBack = map.get(prev, nSquaresBack)->unwrap();
+        allMatchX = allMatchX && nSquaresBack.x == curPos.x;
+        allMatchY = allMatchY && nSquaresBack.y == curPos.y;
+        n += 1;
+    }
+    if n < 3 {
+        // Path isn't long enough
+        return false;
+    }
+
+    return allMatchX || allMatchY;
+}
+
 
 getShortestPath :: (city: [] str, startPos: Pos, targetPos: Pos) -> i32 {
 
@@ -98,19 +121,31 @@ getShortestPath :: (city: [] str, startPos: Pos, targetPos: Pos) -> i32 {
 
         printf("Cur pos: {}, distance: {}\n", curPos, curDistance);
 
+        if curPos.x == 12 && curPos.y == 4 {
+            printf("Cur pos: {}, distance: {}\n", curPos, curDistance);
+        }
+
         neighbours := getNeighbours(curPos);
         for neighbour: neighbours {
             if (neighbour.x >= 0  && neighbour.y >= 0 && neighbour.x < city[0].length && neighbour.y < city.length &&
                 set.has(&unvisited, neighbour)) {
-                blockCost := getCityCost(city, neighbour);
-                neighbourDistance := curDistance + blockCost;
-                printf("Neighbour: {}, distance: {}\n", neighbour, neighbourDistance);
-                if neighbourDistance < map.get(&distances, neighbour)->value_or(MAX_INT) {
-                    map.put(&distances, neighbour, neighbourDistance);
-                    map.put(&prev, neighbour, curPos);
-                    path, cost := getPathFromPrevChain(city, neighbour, &prev);
+                // Check the previous four positions in the optimal chain from this neighbour
+                // If this neighbour would form a straight line then we have to exclude it
+                printf("Neighbour: {}\n", neighbour);
+                if tooManyConsecutiveBlocks(&prev, curPos, neighbour) {
+                    path, cost := getPathFromPrevChain(city, curPos, &prev);
+                    printf("Path too many consecutive blocks: {}, path: {}\n", cost, path);
+                } else {
+                    blockCost := getCityCost(city, neighbour);
+                    neighbourDistance := curDistance + blockCost;
+                    printf("Neighbour: {}, distance: {}\n", neighbour, neighbourDistance);
 
-                    printf("Path cost: {}, path: {}\n", cost, path);
+                    if neighbourDistance < map.get(&distances, neighbour)->value_or(MAX_INT) {
+                        map.put(&distances, neighbour, neighbourDistance);
+                        map.put(&prev, neighbour, curPos);
+                        path, cost := getPathFromPrevChain(city, neighbour, &prev);
+                    }
+                    // printf("Path cost: {}, path: {}\n", cost, path);
                 }
             }
         }
