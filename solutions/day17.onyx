@@ -7,9 +7,12 @@ use core {println, printf}
 use core.string
 use core.array
 use core.set
+use core.hash
 use core.conv {parse_int}
 use strings {toStr}
 use common {Pos, cmp}
+use core.heap
+
 
 desc := "Find the best path to transport the lava crucible through the city from the laval pool to the machine parts factory."
 
@@ -26,8 +29,6 @@ Node :: struct {
 }
 
 MAX_INT :: 2000000000;
-
-
 
 
 getNeighbours :: (p: Pos) -> [..] Pos {
@@ -69,90 +70,94 @@ getPathFromPrevChain :: (city: [] str, targetPos: Pos, prev: &Map(Pos, Pos)) -> 
     return path, pathCost;
 }
 
-tooManyConsecutiveBlocks :: (prev: &Map(Pos, Pos), curPos: Pos, nextPos: Pos) -> bool {
-    // Return true if the next position would mean the path has too many consecutive blocks
-
-    // Iterate over the previous 3 positions. If they all match one of the X or Y
-    // dimensions then they must be on a straight path with the next position
-    allMatchX := curPos.x == nextPos.x;
-    allMatchY := curPos.y == nextPos.y;
-    n := 0;
-    nSquaresBack := curPos;
-    while map.has(prev, nSquaresBack) && n < 3 {
-        nSquaresBack = map.get(prev, nSquaresBack)->unwrap();
-        allMatchX = allMatchX && nSquaresBack.x == curPos.x;
-        allMatchY = allMatchY && nSquaresBack.y == curPos.y;
-        n += 1;
-    }
-    if n < 3 {
-        // Path isn't long enough
-        return false;
-    }
-
-    return allMatchX || allMatchY;
+Direction :: enum {
+    NORTH; SOUTH; EAST; WEST; UNKNOWN;
+}
+#inject
+Direction.hash :: (d: Direction) -> u32 {
+    return hash.hash(cast(u32) d);
+}
+#overload
+hash.hash :: (d: Direction) -> u32 {
+    return hash.hash(cast(u32) d);
+}
+CrucibleState :: struct {
+    pos: Pos;
+    direction: Direction;
+    numSteps: i32;
+}
+#operator == (p1: CrucibleState, p2: CrucibleState) -> bool {
+    return p1.pos == p2.pos && p1.direction == p2.direction && p1.numSteps == p2.numSteps;
+}
+#inject
+CrucibleState.hash :: (p: CrucibleState) -> u32 {
+    return 31 * hash.hash(p.pos) * hash.hash(p.direction) * hash.hash(p.numSteps);
+}
+#overload
+hash.hash :: (p: CrucibleState) -> u32 {
+    return 31 * hash.hash(p.pos) * hash.hash(p.direction) * hash.hash(p.numSteps);
 }
 
+getDirection :: (curPos: Pos, nextPos: Pos) -> Direction {
+    if curPos.y > nextPos.y {
+        return Direction.NORTH;
+    }
+    if curPos.y < nextPos.y {
+        return Direction.SOUTH;
+    }
+    if curPos.x < nextPos.x {
+        return Direction.EAST;
+    }
+    return Direction.WEST;
+}
 
 getShortestPath :: (city: [] str, startPos: Pos, targetPos: Pos) -> i32 {
 
     distances := map.make(Pos, i32);
-    unvisited := set.make(Pos);
-    queue := array.make(Pos);
+    visited := set.make(CrucibleState);
     prev := map.make(Pos, Pos);
 
-    for y: 0 .. city.length {
-        for x: 0 .. city[0].length {
-            pos := Pos.{x, y};
-            map.put(&distances, pos, MAX_INT);
-            set.insert(&unvisited, pos);
-            queue << pos;
-        }
-    }
-
     map.put(&distances, startPos, getCityCost(city, startPos));
+    queue := heap.make(CrucibleState, (p1, p2, [distances]) => compareStatesByDistance(p1, p2, &distances));
 
-    sortedQueue := array.sort(queue, (p1, p2, [distances]) => comparePositionsByDistance(p1, p2, &distances));
+    queue << CrucibleState.{startPos, Direction.SOUTH, 1};
 
-    while !array.empty(sortedQueue) {
-        curPos := sortedQueue[0];
-        sortedQueue = sortedQueue[1 .. sortedQueue.length]; // remove the first item from the queue
+    curDirection := Direction.SOUTH;
 
-        curDistance := map.get(&distances, curPos)->value_or(MAX_INT);
+    while !array.empty(queue.data)  && queue.data.count < 10 {
+        curState := heap.remove_top(&queue);
 
-        printf("Cur pos: {}, distance: {}\n", curPos, curDistance);
+        curDistance := map.get(&distances, curState.pos)->value_or(MAX_INT);
 
-        if curPos.x == 12 && curPos.y == 4 {
-            printf("Cur pos: {}, distance: {}\n", curPos, curDistance);
-        }
+        printf("Cur state: {}, distance: {}\n", curState, curDistance);
 
-        neighbours := getNeighbours(curPos);
+        neighbours := getNeighbours(curState.pos);
         for neighbour: neighbours {
-            if (neighbour.x >= 0  && neighbour.y >= 0 && neighbour.x < city[0].length && neighbour.y < city.length &&
-                set.has(&unvisited, neighbour)) {
-                // Check the previous four positions in the optimal chain from this neighbour
-                // If this neighbour would form a straight line then we have to exclude it
-                printf("Neighbour: {}\n", neighbour);
-                if tooManyConsecutiveBlocks(&prev, curPos, neighbour) {
-                    path, cost := getPathFromPrevChain(city, curPos, &prev);
-                    printf("Path too many consecutive blocks: {}, path: {}\n", cost, path);
-                } else {
+            neighbourDirection := getDirection(curState.pos, neighbour);
+            neighbourState: CrucibleState;
+            if neighbourDirection != curDirection {
+                neighbourState = CrucibleState.{neighbour, neighbourDirection, 1};
+            } else {
+                neighbourState = CrucibleState.{neighbour, neighbourDirection, curState.numSteps + 1};
+            }
+            if (neighbour.x >= 0 && neighbour.y >= 0 && neighbour.x < city[0].length && neighbour.y < city.length &&
+                !set.has(&visited, neighbourState)) {
+                if neighbourState.numSteps < 3 {
                     blockCost := getCityCost(city, neighbour);
                     neighbourDistance := curDistance + blockCost;
-                    printf("Neighbour: {}, distance: {}\n", neighbour, neighbourDistance);
 
                     if neighbourDistance < map.get(&distances, neighbour)->value_or(MAX_INT) {
+                        printf("Recording distance to position: {}, distance: {}\n", neighbour, neighbourDistance);
                         map.put(&distances, neighbour, neighbourDistance);
-                        map.put(&prev, neighbour, curPos);
-                        path, cost := getPathFromPrevChain(city, neighbour, &prev);
+                        map.put(&prev, neighbour, neighbourState.pos);
                     }
-                    // printf("Path cost: {}, path: {}\n", cost, path);
                 }
+                queue << neighbourState;
+                printf("Adding neighbour state to queue: {}. (queue size: {})\n", neighbourState, queue.data.count);
             }
         }
-        set.remove(&unvisited, curPos);
 
-        // Sort the queue - even though array.sort uses insertion sort, since the array is already mostly sorted this is relatively fast.
-        sortedQueue = array.sort(sortedQueue, (p1, p2, [distances]) => comparePositionsByDistance(p1, p2, &distances));
+        set.insert(&visited, curState);
     }
 
     path, pathCost := getPathFromPrevChain(city, targetPos, &prev);
@@ -166,8 +171,15 @@ getShortestPath :: (city: [] str, startPos: Pos, targetPos: Pos) -> i32 {
     return pathCost;
 }
 
-comparePositionsByDistance :: (p1: Pos, p2: Pos, distances: &Map(Pos, i32)) -> i32 {
-    return cmp(map.get(distances, p1)->value_or(MAX_INT), map.get(distances, p2)->value_or(MAX_INT));
+compareStatesByDistance :: (p1: CrucibleState, p2: CrucibleState, distances: &Map(Pos, i32)) -> i32 {
+    printf("Getting distance for pos1 {}\n", p1.pos);
+    d1 := map.get(distances, p1.pos)->value_or(MAX_INT);
+    printf("Distance for pos1 {}: {}\n", p1.pos, d1);
+
+    printf("Getting distance for pos2 {}\n", p1.pos);
+    d2 := map.get(distances, p2.pos)->value_or(MAX_INT);
+    printf("Distance for pos2 {}: {}\n", p2.pos, d2);
+    return cmp(d1, d2);
 }
 
 
