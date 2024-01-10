@@ -2,7 +2,7 @@ let worker = undefined;
 let particles = [];
 
 window.onload = function () {
-    worker = new Worker("worker.js");
+    worker = new Worker("adventsolver.js");
     worker.onmessage = (e) => {
         if (e.data.msg == "description") {
             document.getElementById("description").innerHTML = e.data.value;
@@ -17,6 +17,16 @@ window.onload = function () {
     };
 
     initSnow();
+    initOnyx();
+}
+
+function initOnyx() {
+    const memory = new WebAssembly.Memory({
+        initial: 1024,
+        maximum: 1024,
+        shared: true
+      });
+    worker.postMessage({msg: "init", memory});
 }
 
 const openWindow = (day) => {
@@ -26,7 +36,7 @@ const openWindow = (day) => {
 
     document.getElementById("resultsection").style.display = "none";
 
-    worker.postMessage({msg: "description", params: [day]});
+    worker.postMessage({msg: "description", day});
 
     const windowDiv = document.getElementById("window");
     windowDiv.style.opacity = 0.75;
@@ -38,7 +48,7 @@ const solve = (day, part) => {
     document.getElementById("resultsection").style.display = "block";
     document.getElementById("result").innerHTML = "Working..."
 
-    worker.postMessage({msg: "solve", params: [day, part]});
+    worker.postMessage({msg: "solve", day, part});
 
     return false;
 }
