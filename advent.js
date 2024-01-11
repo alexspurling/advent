@@ -1,23 +1,27 @@
-let worker = undefined;
+let solver = undefined;
 let particles = [];
 
 window.onload = function () {
-    worker = new Worker("adventsolver.js");
-    worker.onmessage = (e) => {
+    solver = new Worker("adventsolver.js");
+    solver.onmessage = (e) => {
         if (e.data.msg == "description") {
             document.getElementById("description").innerHTML = e.data.value;
         } else if (e.data.msg == "progress") {
             const progress = e.data.value;
             document.getElementById("result").innerHTML = "(progress: " + progress.toFixed(1) + "%)";
         } else if (e.data.msg == "result") {
-            document.getElementById("result").innerHTML = e.data.value;
+            if (e.data.hasVisualisation) {
+                document.getElementById("canvasresult").innerHTML = e.data.value;
+            } else {
+                document.getElementById("normalresult").innerHTML = e.data.value;
+            }
         } else {
             console.log("Received unexpected result from worker", e);
         }
     };
 
-    initSnow();
     initOnyx();
+    initSnow();
 }
 
 function initOnyx() {
@@ -26,36 +30,65 @@ function initOnyx() {
         maximum: 1024,
         shared: true
       });
-    worker.postMessage({msg: "init", memory});
+    solver.postMessage({msg: "init", memory});
 }
 
-const openWindow = (day) => {
+
+let frameCounter = 0;
+
+function initSolutionCanvas() {
+    let ctx = document.getElementById("solutioncanvas").getContext("2d");
+    let renderFps = () => {
+        ctx.clearRect(0, 0, 750, 750);
+        ctx.font = "20px sans";
+        ctx.fillStyle = "black";
+        ctx.fillText("Frames: " + frameCounter, 20, 40);
+        frameCounter += 1;
+        requestAnimationFrame(renderFps);
+    };
+    requestAnimationFrame(renderFps);
+}
+
+const openWindow = (day, hasVisualisation) => {
     document.getElementById("day").innerHTML = "Day " + day;
-    document.getElementById("part1").onclick = () => {return solve(day, 1)};
-    document.getElementById("part2").onclick = () => {return solve(day, 2)};
+    document.getElementById("part1").onclick = () => {return solve(day, 1, hasVisualisation)};
+    document.getElementById("part2").onclick = () => {return solve(day, 2, hasVisualisation)};
 
-    document.getElementById("resultsection").style.display = "none";
+    document.getElementById("normalresultsection").style.display = "none";
+    document.getElementById("canvasresultsection").style.display = "none";
 
-    worker.postMessage({msg: "description", day});
+    solver.postMessage({msg: "description", day});
 
-    const windowDiv = document.getElementById("window");
-    windowDiv.style.opacity = 0.75;
+    document.getElementById("window").style.display = "block";
 
     return false;
 }
 
-const solve = (day, part) => {
-    document.getElementById("resultsection").style.display = "block";
-    document.getElementById("result").innerHTML = "Working..."
+const closeWindow = () => {
+    document.getElementById("window").style.display = "none";
 
-    worker.postMessage({msg: "solve", day, part});
+    return false;
+}
+
+const solve = (day, part, hasVisualisation) => {
+    if (hasVisualisation) {
+        document.getElementById("solutioncontainer").style.display = "block";
+        document.getElementById("canvasresultsection").style.display = "block";
+        document.getElementById("canvasresult").innerHTML = "Working..."
+    } else {
+        document.getElementById("solutioncontainer").style.display = "none";
+        document.getElementById("normalresultsection").style.display = "block";
+        document.getElementById("normalresult").innerHTML = "Working..."
+    }
+
+    solver.postMessage({msg: "solve", day, part, hasVisualisation});
 
     return false;
 }
 
 function initSnow() {
 	//canvas init
-	var canvas = document.getElementById("canvas");
+	var canvas = document.getElementById("snowcanvas");
 	var ctx = canvas.getContext("2d");
 
 	//canvas dimensions

@@ -23,6 +23,7 @@
     }
     h2 {
         font-weight: 100;
+        display: inline-block;
     }
     .calendar {
         position: relative;
@@ -56,14 +57,15 @@
     #window {
         position: absolute;
         top: 40px;
-        left: 40px;
-        opacity: 0;
-        background-color: rgb(92, 15, 15);
+        left: 100px;
+        background-color: rgba(92, 15, 15, 0.75);
         border: 3px solid rgb(117, 9, 9);
         border-radius: 5px;
-        padding: 0 30px 0 30px;
+        padding: 0 30px 25px 30px;
         color: whitesmoke;
-        max-width: 300px;
+        display: none;
+        margin: auto;
+        width: 750px;
     }
 
     a {
@@ -72,11 +74,36 @@
     a:hover {
         color: #99ff99;
     }
-    #canvas {
+    #snowcanvas {
         position: absolute;
         top: 0px;
         left: 0px;
         pointer-events: none;
+    }
+
+    #solutioncanvas {
+        background-color: rgb(50, 50, 50);
+        border-radius: 5px;
+        opacity: 0.85;
+        position: relative;
+    }
+    .closebutton {
+        float: right;
+        font-size: 2.4rem;
+        font-weight: 50;
+        font-family: sans-serif;
+        margin-top: 20px;
+        cursor: pointer;
+        color: whitesmoke;
+    }
+    #canvasresultsection {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+    }
+    #solutioncontainer {
+        position: relative;
+        display: none;
     }
 
 </style>
@@ -103,15 +130,20 @@
             <div class="window" style="top: 460px; left: 564px" onclick="return openWindow(14)">14</div>
             <div class="window" style="top: 515px; left: 320px" onclick="return openWindow(15)">15</div>
             <div class="window" style="top: 406px; left: 585px; font-size: 3rem" onclick="return openWindow(16)">16</div>
-            <div class="window" style="top: 525px; left: 865px; font-size: 3rem" onclick="return openWindow(17)">17</div>
+            <div class="window" style="top: 525px; left: 865px" onclick="return openWindow(17, true)">17</div>
         </div>
         <div id="window">
             <h2 id="day">Day 1</h2>
+            <a class="closebutton" onclick="return closeWindow()">&times;</a>
             <p id="description">Calculate the calbration values for the trebuchet.</p>
             <p><a href="#" id="part1">Part 1</a>&nbsp;<a href="#" id="part2">Part 2</a></p>
-            <p id="resultsection">Result: <span id="result"></span></p>
+            <div id="solutioncontainer">
+                <canvas id="solutioncanvas" width="750" height="750"></canvas>
+                <div id="canvasresultsection">Result: <span id="canvasresult"></span></div>
+            </div>
+            <div id="normalresultsection">Result: <span id="normalresult"></span></div>
         </div>
-        <canvas id="canvas" width="1024" height="1024"></canvas>
+        <canvas id="snowcanvas" width="1024" height="1024"></canvas>
     </div>
 </body>
 </html>
