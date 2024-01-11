@@ -1,8 +1,6 @@
 package common
 
-use core.hash {
-    corehash :: hash
-}
+use core.hash
 
 
 progress :: (p: f64) -> void  #foreign "host" "progress" ---
@@ -16,12 +14,28 @@ cmp :: (num1: $T, num2: T) -> i32 {
 Pos :: struct {
     x: i32;
     y: i32;
-
-    hash :: (p: Pos) -> i32 {
-        // This is the algorithm Java uses
-        return 31 * 31 * corehash(p.x) * corehash(p.y);
-    }
+}
+#inject
+Pos.hash :: (p: Pos) -> i32 {
+    return 31 * 31 * hash.hash(p.x) * hash.hash(p.y);
+}
+#overload
+hash.hash :: (p: Pos) -> i32 {
+    return 31 * 31 * hash.hash(p.x) * hash.hash(p.y);
 }
 #operator == (p1: Pos, p2: Pos) -> bool {
     return p1.x == p2.x && p1.y == p2.y;
+}
+
+
+Direction :: enum {
+    NORTH; SOUTH; EAST; WEST; UNKNOWN;
+}
+#inject
+Direction.hash :: (d: Direction) -> u32 {
+    return hash.hash(cast(u32) d);
+}
+#overload
+hash.hash :: (d: Direction) -> u32 {
+    return hash.hash(cast(u32) d);
 }

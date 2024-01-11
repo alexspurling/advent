@@ -8,7 +8,8 @@ window.onload = function () {
             document.getElementById("description").innerHTML = e.data.value;
         } else if (e.data.msg == "progress") {
             const progress = e.data.value;
-            document.getElementById("result").innerHTML = "(progress: " + progress.toFixed(1) + "%)";
+            document.getElementById("canvasresult").innerHTML = "(progress: " + progress.toFixed(1) + "%)";
+            document.getElementById("normalresult").innerHTML = "(progress: " + progress.toFixed(1) + "%)";
         } else if (e.data.msg == "result") {
             if (e.data.hasVisualisation) {
                 document.getElementById("canvasresult").innerHTML = e.data.value;

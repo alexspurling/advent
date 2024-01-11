@@ -1,0 +1,169 @@
+package canvas
+
+use core {printf}
+use core.math
+use core.intrinsics.wasm {memory_fill}
+use common {Direction}
+use core.intrinsics.atomics {__atomic_wait, __atomic_notify, __atomic_cmpxchg, __atomic_store}
+
+mutex := 0;
+lock :: () {
+    // Wait until the mutex is 0 as that means it's safe to render or update the game state
+    // If it is 0 then set the value to 1 and exit the loop
+    while __atomic_cmpxchg(&mutex, 0, 1) != 0 {
+        __atomic_wait(&mutex, 1);
+    }
+}
+
+unlock :: () {
+    // Set the mutex back to 0 and notify any threads that are waiting
+    __atomic_store(&mutex, 0);
+    __atomic_notify(&mutex);
+}
+
+CANVAS_SIZE :: 800;
+CANVAS_BUFFER_SIZE :: CANVAS_SIZE * CANVAS_SIZE * 4; // 4 bytes per pixel
+CANVAS_BUFFER_POINTER: [CANVAS_BUFFER_SIZE] u8;
+
+FONT :: #file_contents "monaco16.bmp"
+FONT_IMAGE :: FONT[cast(u32) FONT[0xA] .. FONT.count]; // The byte at 0xA tells us where the RGB image data begins
+
+
+FontSheet :: struct {
+    width: i32;
+    height: i32;
+    charWidth: i32;
+    charHeight: i32;
+    sheetWidth: i32;
+    sheetHeight: i32;
+}
+
+FONT_SHEET :: FontSheet.{320, 51, 10, 17, 32, 3};
+
+
+#export "getBufferSize" getBufferSize
+getBufferSize :: () -> i32 {
+    return CANVAS_BUFFER_SIZE;
+}
+
+#export "getBufferPointer" getBufferPointer
+getBufferPointer :: () -> rawptr {
+    return &CANVAS_BUFFER_POINTER;
+}
+
+Colour :: struct {
+    r: u8;
+    g: u8;
+    b: u8;
+    a: u8;
+}
+
+// Font sheet:
+//  !"#$%&'()*+,-./0123456789:;<=>?
+// @ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_
+// `abcdefghijklmnopqrstuvwxyz{|}~
+
+
+drawChar :: (char: u8, xPos: i32, yPos: i32, colour: Colour) {
+    for y: 0 .. FONT_SHEET.charHeight {
+        for x: 0 .. FONT_SHEET.charWidth {
+            addPixel(xPos + x, yPos + y, getFontPixel(char, x, y, colour));
+        }
+    }
+}
+
+getFontPixel :: (char: u8, x: i32, y: i32, colour: Colour) -> Colour {
+    // Need to subtract the y coord from the sheet height because for some reason
+    // BMP files store images from bottom to top
+    charX := cast(i32, (char - ' ')) % FONT_SHEET.sheetWidth;
+    charY := cast(i32, (char - ' ')) / FONT_SHEET.sheetWidth;
+    fontIdx := (charX * FONT_SHEET.charWidth + x + ((FONT_SHEET.height - 1 - y - (charY * FONT_SHEET.charHeight)) * FONT_SHEET.width)) * 4;
+
+    // We only really need the alpha channel because we assume the font pixels are all white
+    fontColourA := FONT_IMAGE[fontIdx + 3];
+
+    return Colour.{colour.r, colour.g, colour.b, fontColourA};
+}
+
+drawBox :: (xPos: i32, yPos: i32, width: i32, height: i32, colour: Colour) {
+    // Top and bottom
+    drawLineX(xPos, yPos,              width, colour);
+    drawLineX(xPos, yPos + height - 1, width, colour);
+    // Left and right
+    drawLineY(xPos,             yPos, height, colour);
+    drawLineY(xPos + width - 1, yPos, height, colour);
+}
+
+drawLineX :: (xPos: i32, yPos: i32, width: i32, colour: Colour) {
+    for x: 0 .. width {
+        setPixel(xPos + x, yPos, colour);
+    }
+}
+
+drawLineY :: (xPos: i32, yPos: i32, height: i32, colour: Colour) {
+    for y: 0 .. height {
+        setPixel(xPos, yPos + y, colour);
+    }
+}
+
+drawArrow :: (xPos: i32, yPos: i32, direction: Direction, colour: Colour) {
+    switch direction {
+        case Direction.NORTH {
+            drawChar('^', xPos, yPos - 7, colour);
+        }
+        case Direction.SOUTH {
+            drawChar('v', xPos, yPos - 8, colour);
+        }
+        case Direction.EAST {
+            drawChar('>', xPos + 1, yPos - 9, colour);
+        }
+        case Direction.WEST {
+            drawChar('<', xPos, yPos - 9, colour);
+        }
+    }
+}
+
+drawRect :: (xPos: i32, yPos: i32, width: i32, height: i32, colour: Colour) {
+    for y: 0 .. height {
+        for x: 0 .. width {
+            setPixel(xPos + x, yPos + y, colour);
+        }
+    }
+}
+
+add :: (originalPixel: Colour, newPixel: Colour) -> Colour {
+    invAlpha := 255 - newPixel.a;
+    combinedR := (originalPixel.r * invAlpha + newPixel.r * newPixel.a) / 255;
+    combinedG := (originalPixel.g * invAlpha + newPixel.g * newPixel.a) / 255;
+    combinedB := (originalPixel.b * invAlpha + newPixel.b * newPixel.a) / 255;
+    combinedA := math.max(originalPixel.a, newPixel.a);
+    return Colour.{combinedR, combinedG, combinedB, combinedA};
+}
+
+addPixel :: (x: i32, y: i32, pixel: Colour) {
+    // Combine the given colour with the colour already in the buffer
+    bufferIdx := (y * CANVAS_SIZE + x) * 4;
+    existingColour := Colour.{
+        CANVAS_BUFFER_POINTER[bufferIdx + 0],
+        CANVAS_BUFFER_POINTER[bufferIdx + 1],
+        CANVAS_BUFFER_POINTER[bufferIdx + 2],
+        CANVAS_BUFFER_POINTER[bufferIdx + 3]
+    };
+    setPixel(x, y, add(existingColour, pixel));
+}
+
+setPixel :: (x: i32, y: i32, pixel: Colour) {
+    bufferIdx := (y * CANVAS_SIZE + x) * 4;
+    if bufferIdx >= 0 && bufferIdx <= CANVAS_BUFFER_SIZE - 4 {
+        CANVAS_BUFFER_POINTER[bufferIdx + 0] = pixel.r;
+        CANVAS_BUFFER_POINTER[bufferIdx + 1] = pixel.g;
+        CANVAS_BUFFER_POINTER[bufferIdx + 2] = pixel.b;
+        CANVAS_BUFFER_POINTER[bufferIdx + 3] = pixel.a;
+    } else {
+        printf("Setting pixel out of bounds: x: {}, y: {}, idx: {}\n", x, y, bufferIdx);
+    }
+}
+
+clear :: () {
+    memory_fill(&CANVAS_BUFFER_POINTER, 0, CANVAS_BUFFER_SIZE);
+}
