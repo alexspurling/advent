@@ -13,6 +13,7 @@ use strings {toStr}
 use common {Pos, cmp, Direction, progress}
 use core.heap
 use canvas
+use canvas {Colour}
 
 
 desc := "Find the best path to transport the lava crucible through the city from the laval pool to the machine parts factory."
@@ -70,20 +71,19 @@ opposite :: (d: Direction) -> Direction {
 
 
 // Variables used for visualisation
-lastCrucibleState : CrucibleState;
-recentlyUpdatedDistances: [..] Pos;
-minDistances : Map(Pos, i32);
+// lastCrucibleState : CrucibleState;
+// recentlyUpdatedDistances: [..] Pos;
+// minDistances : Map(Pos, i32);
 
 
 
 getShortestPathStep :: (city: [] str, targetPos: Pos, distances: &Map(CrucibleState, i32), visited: &Set(CrucibleState),
                         prev: &Map(CrucibleState, CrucibleState), queue: &heap.Heap(CrucibleState)) -> CrucibleState {
     canvas.lock();
-    recentlyUpdatedDistances = array.make(Pos);
 
     curState := heap.remove_top(queue);
 
-    lastCrucibleState = curState;
+    // lastCrucibleState = curState;
 
     if curState.pos == targetPos {
         printf("Found solution: {} with queue size {}\n", curState, queue.data.count);
@@ -125,7 +125,10 @@ getShortestPathStep :: (city: [] str, targetPos: Pos, distances: &Map(CrucibleSt
 
 
 solve_part_1 :: () -> str {
+
+    printf("Starting to solve part 1\n");
     input := #file_contents "inputs/day17.txt";
+
     city := string.split(input, '\n');
     startPos := Pos.{0, 0};
     targetPos := Pos.{city[0].length - 1, city.length - 1};
@@ -140,9 +143,9 @@ solve_part_1 :: () -> str {
     numSteps := 0;
     while !array.empty(queue.data) {
         curState = getShortestPathStep(city, targetPos, &distances, &visited, &prev, &queue);
-        if numSteps % 50000 == 0 {
-            progress(cast(f64) numSteps / 9333);
-        }
+        // if numSteps % 50000 == 0 {
+        //     progress(cast(f64) numSteps / 9333);
+        // }
         numSteps += 1;
     }
 
@@ -150,12 +153,26 @@ solve_part_1 :: () -> str {
 }
 
 render :: () {
+    // canvas.lock();
+    // canvas.clear();
 
+    // posX := lastCrucibleState.pos.x * 5;
+    // posY := lastCrucibleState.pos.x * 5;
+
+    // canvas.drawRect(posX, posY, 4, 4, Colour.{255, 0, 0, 255});
+    // canvas.unlock();
 }
 
 
 solve_part_2 :: () -> str {
-    return "";
+    solve_part_1();
+    solve_part_1();
+    solve_part_1();
+    solve_part_1();
+    solve_part_1();
+    solve_part_1();
+    // Crashes here
+    return solve_part_1();
 }
 
 
