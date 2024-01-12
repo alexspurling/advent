@@ -12,12 +12,18 @@ window.onload = function () {
     initSolver();
     initRenderer();
     initSnow();
+
+    // First initialise the solver - the render worker will be initialised after the solver has finished initialising
+    solver.postMessage({msg: "init", memory});
 }
 
 function initSolver() {
     solver = new Worker("adventsolver.js");
     solver.onmessage = (e) => {
-        if (e.data.msg == "description") {
+        if (e.data.msg === "initialised") {
+            console.log("Solver initialised");
+            renderer.postMessage({msg: "init", memory});
+        } else if (e.data.msg == "description") {
             document.getElementById("description").innerHTML = e.data.value;
         } else if (e.data.msg == "progress") {
             const progress = e.data.value;
@@ -35,13 +41,13 @@ function initSolver() {
         maximum: 1024,
         shared: true
       });
-    solver.postMessage({msg: "init", memory});
+    wasmByteMemoryArray = new Uint8Array(memory.buffer);
 }
 
 function initRenderer() {
     renderer = new Worker("adventrenderer.js");
     renderer.onmessage = (e) => {
-        if (e.data.msg === "canvas") {
+        if (e.data.msg === "initialised") {
             console.log("Got canvas ref", e.data.canvasRef);
             canvasRef = e.data.canvasRef;
         } else if (e.data.msg === "rendered") {
@@ -51,7 +57,6 @@ function initRenderer() {
             requestAnimationFrame(() => drawCanvas(day, part));
         }
     }
-    renderer.postMessage({msg: "init", memory});
 }
 
 function render(day, part) {
@@ -62,7 +67,8 @@ function render(day, part) {
 let frameCount = 0;
 
 function drawCanvas(day, part) {
-    const canvasData = new Uint8Array(memory.buffer, canvasRef.canvasPointer, canvasRef.canvasSize);
+    // const canvasData = new Uint8Array(memory.buffer, canvasRef.canvasPointer, canvasRef.canvasSize);
+    const canvasData = wasmByteMemoryArray.slice(canvasRef.canvasPointer, canvasRef.canvasSize);
     const canvas = document.getElementById("solutioncanvas");
     const ctx = canvas.getContext("2d");
     const imageData = ctx.createImageData(canvas.width, canvas.height);

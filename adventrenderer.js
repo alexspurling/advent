@@ -1,24 +1,25 @@
 importScripts("wasmmodule.js");
 
-let wasmInstance;
-let memory;
+let renderWasmInstance;
+let renderMemory;
 
 onmessage = async (e) => {
     if (e.data.msg === "init") {
-        memory = e.data.memory;
-        wasmInstance = await loadWasmInstance("advent.wasm", memory);
-        // This only needs to be called once for a given instance of shared memory but don't forget this otherwise nothing will work
+        renderMemory = e.data.memory;
+        renderWasmInstance = await loadWasmInstance("advent.wasm", renderMemory);
+        // TODO figure out where / when this should be called. If both threads call it, then only the last one will be able to called printf()
         // initOnyx(wasmInstance);
+        renderWasmInstance.exports._initialize();
 
         const canvasRef = {
-            canvasSize: wasmInstance.exports.getCanvasSize(),
-            canvasPointer: wasmInstance.exports.getCanvasPointer()
+            canvasSize: renderWasmInstance.exports.getCanvasSize(),
+            canvasPointer: renderWasmInstance.exports.getCanvasPointer()
         };
-        postMessage({msg: "canvas", canvasRef});
+        postMessage({msg: "initialised", canvasRef});
     } else if (e.data.msg === "render") {
         const day = e.data.day;
         const part = e.data.part;
-        wasmInstance.exports.render(day, part);
+        renderWasmInstance.exports.render(day, part);
         postMessage({msg: "rendered", day, part});
     } else {
         console.log("Received unknown message", e.data);

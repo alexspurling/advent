@@ -51,7 +51,3 @@ const loadWasmInstance = async (wasmModuleUrl, memory) => {
     return wasmModule.instance;
 }
 
-const initOnyx = (wasmInstance) => {
-    // Initialise the Onyx heap and other things
-    wasmInstance.exports._initialize();
-}

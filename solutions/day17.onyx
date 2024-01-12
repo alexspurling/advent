@@ -78,17 +78,19 @@ prev : Map(CrucibleState, CrucibleState);
 // minDistances : Map(Pos, i32);
 
 
+getShortestPathStep :: (city: [] str, targetPos: Pos, distances: &Map(CrucibleState, i32),
+                        visited: &Set(CrucibleState), queue: &heap.Heap(CrucibleState)) -> CrucibleState {
 
-getShortestPathStep :: (city: [] str, targetPos: Pos, distances: &Map(CrucibleState, i32), visited: &Set(CrucibleState),
-                        queue: &heap.Heap(CrucibleState)) -> CrucibleState {
     canvas.lock();
 
     curState := heap.remove_top(queue);
 
+    // printf("Current state: {}\n", curState);
+
     lastCrucibleState = curState;
 
     if curState.pos == targetPos {
-        printf("Found solution: {} with queue size {}\n", curState, queue.data.count);
+        // printf("Found solution: {} with queue size {}\n", curState, queue.data.count);
         // map.put(&distances, curState, curState.distance);
         while !array.empty(queue.data) {
             // empty the queue
@@ -115,7 +117,12 @@ getShortestPathStep :: (city: [] str, targetPos: Pos, distances: &Map(CrucibleSt
                     neighbourState = CrucibleState.{neighbour, neighbourDirection, 1, neighbourDistance};
                 }
                 heap.insert(queue, neighbourState);
-                map.put(&prev, neighbourState, curState);
+
+                // if neighbourDistance < map.get(&minDistances, neighbour)->value_or(MAX_INT) {
+                //     map.put(&minDistances, neighbour, neighbourDistance);
+                //     map.put(&prev, neighbourState, curState);
+                // }
+
                 // printf("Adding neighbour ({}, {})\n", neighbour.x, neighbour.y);
             }
         }
@@ -134,21 +141,25 @@ setInitialised :: (setTo: i32) {
 
 solve_part_1 :: () -> str {
 
-    printf("Starting to solve part 1\n");
+    canvas.lock();
+    // printf("Starting to solve part 1\n");
     input := #file_contents "inputs/day17.txt";
 
     city := string.split(input, '\n');
+
+    // printf("City: {}\n", &city);
+
     startPos := Pos.{0, 0};
     targetPos := Pos.{city[0].length - 1, city.length - 1};
 
     distances := map.make(CrucibleState, i32);
-    defer map.free(&distances);
+
     visited := set.make(CrucibleState);
-    defer set.free(&visited);
+
     prev = map.make(CrucibleState, CrucibleState);
-    defer map.free(&prev);
+
     queue := heap.make(CrucibleState, (p1: CrucibleState, p2: CrucibleState) => cmp(p1.distance, p2.distance));
-    defer array.free(&queue.data);
+
 
     lastCrucibleState = CrucibleState.{startPos, Direction.UNKNOWN, 0};
     queue << lastCrucibleState;
@@ -158,6 +169,7 @@ solve_part_1 :: () -> str {
 
     // Don't allow render() to do anything shared objects are uninitialised
     setInitialised(1);
+    canvas.unlock();
 
     while !array.empty(queue.data) {
         curState = getShortestPathStep(city, targetPos, &distances, &visited, &queue);
@@ -171,6 +183,10 @@ solve_part_1 :: () -> str {
     // This will allow us to free any shared data and avoid illegal access
     canvas.lock();
     setInitialised(0);
+    map.free(&distances);
+    set.free(&visited);
+    map.free(&prev);
+    array.free(&queue.data);
     canvas.unlock();
 
     return toStr(curState.distance);
@@ -183,19 +199,23 @@ render :: () {
     }
 
     canvas.lock();
-    canvas.clear();
+    // canvas.clear();
 
     posX := 25 + lastCrucibleState.pos.x * 5;
     posY := 25 + lastCrucibleState.pos.y * 5;
 
-    // if (lastCrucibleState.pos.x == 0 && lastCrucibleState.pos.y == 0) {
-        // printf("Render state is 0\n");
-    // }
-
     canvas.drawRect(posX, posY, 4, 4, Colour.{255, 0, 0, 255});
 
+    // Uncommenting this line will break the solver thread for some reason
     // initialState := CrucibleState.{Pos.{0, 0}, Direction.UNKNOWN, 0};
+
+    // for i: 0 .. 0 {
+
+    // }
+
+
     // prevState := map.get(&prev, lastCrucibleState)->value_or(initialState);
+
     // while prevState.pos != Pos.{0, 0} {
     //     posX := 25 + prevState.pos.x * 5;
     //     posY := 25 + prevState.pos.y * 5;
