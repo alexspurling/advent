@@ -146,9 +146,11 @@ solve_part_1 :: () -> str {
         numSteps += 1;
     }
 
-    println(numSteps);
-
     return toStr(curState.distance);
+}
+
+render :: () {
+
 }
 
 

@@ -21,8 +21,9 @@ unlock :: () {
     __atomic_notify(&mutex);
 }
 
-CANVAS_SIZE :: 800;
-CANVAS_BUFFER_SIZE :: CANVAS_SIZE * CANVAS_SIZE * 4; // 4 bytes per pixel
+CANVAS_WIDTH :: 750;
+CANVAS_HEIGHT :: 750;
+CANVAS_BUFFER_SIZE :: CANVAS_WIDTH * CANVAS_HEIGHT * 4; // 4 bytes per pixel
 CANVAS_BUFFER_POINTER: [CANVAS_BUFFER_SIZE] u8;
 
 FONT :: #file_contents "monaco16.bmp"
@@ -41,13 +42,13 @@ FontSheet :: struct {
 FONT_SHEET :: FontSheet.{320, 51, 10, 17, 32, 3};
 
 
-#export "getBufferSize" getBufferSize
-getBufferSize :: () -> i32 {
+#export "getCanvasSize" getCanvasSize
+getCanvasSize :: () -> i32 {
     return CANVAS_BUFFER_SIZE;
 }
 
-#export "getBufferPointer" getBufferPointer
-getBufferPointer :: () -> rawptr {
+#export "getCanvasPointer" getCanvasPointer
+getCanvasPointer :: () -> rawptr {
     return &CANVAS_BUFFER_POINTER;
 }
 
@@ -142,7 +143,7 @@ add :: (originalPixel: Colour, newPixel: Colour) -> Colour {
 
 addPixel :: (x: i32, y: i32, pixel: Colour) {
     // Combine the given colour with the colour already in the buffer
-    bufferIdx := (y * CANVAS_SIZE + x) * 4;
+    bufferIdx := (y * CANVAS_WIDTH + x) * 4;
     existingColour := Colour.{
         CANVAS_BUFFER_POINTER[bufferIdx + 0],
         CANVAS_BUFFER_POINTER[bufferIdx + 1],
@@ -153,7 +154,7 @@ addPixel :: (x: i32, y: i32, pixel: Colour) {
 }
 
 setPixel :: (x: i32, y: i32, pixel: Colour) {
-    bufferIdx := (y * CANVAS_SIZE + x) * 4;
+    bufferIdx := (y * CANVAS_WIDTH + x) * 4;
     if bufferIdx >= 0 && bufferIdx <= CANVAS_BUFFER_SIZE - 4 {
         CANVAS_BUFFER_POINTER[bufferIdx + 0] = pixel.r;
         CANVAS_BUFFER_POINTER[bufferIdx + 1] = pixel.g;

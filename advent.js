@@ -1,7 +1,20 @@
-let solver = undefined;
+let solver;
+let renderer;
+
+let memory;
+
+let canvasRef;
+let solved = false;
+
 let particles = [];
 
 window.onload = function () {
+    initSolver();
+    initRenderer();
+    initSnow();
+}
+
+function initSolver() {
     solver = new Worker("adventsolver.js");
     solver.onmessage = (e) => {
         if (e.data.msg == "description") {
@@ -16,17 +29,13 @@ window.onload = function () {
             } else {
                 document.getElementById("normalresult").innerHTML = e.data.value;
             }
+            solved = true;
         } else {
             console.log("Received unexpected result from worker", e);
         }
     };
-
-    initOnyx();
-    initSnow();
-}
-
-function initOnyx() {
-    const memory = new WebAssembly.Memory({
+    // Initialise the shared memory object
+    memory = new WebAssembly.Memory({
         initial: 1024,
         maximum: 1024,
         shared: true
@@ -34,11 +43,52 @@ function initOnyx() {
     solver.postMessage({msg: "init", memory});
 }
 
+function initRenderer() {
+    renderer = new Worker("adventrenderer.js");
+    renderer.onmessage = (e) => {
+        if (e.data.msg === "canvas") {
+            console.log("Got canvas ref", e.data.canvasRef);
+            canvasRef = e.data.canvasRef;
+        } else if (e.data.msg === "rendered") {
+            // Request to draw the current frame in shared memory on the next animation frame
+            const day = e.data.day;
+            const part = e.data.part;
+            requestAnimationFrame(() => drawCanvas(day, part));
+        }
+    }
+    renderer.postMessage({msg: "init", memory});
+}
+
+function render(day, part) {
+    // Ask the render worker to render a frame into shared memory
+    renderer.postMessage({msg: "render", day, part});
+}
+
+let frameCount = 0;
+
+function drawCanvas(day, part) {
+    const canvasData = new Uint8Array(memory.buffer, canvasRef.canvasPointer, canvasRef.canvasSize);
+    const canvas = document.getElementById("solutioncanvas");
+    const ctx = canvas.getContext("2d");
+    const imageData = ctx.createImageData(canvas.width, canvas.height);
+    imageData.data.set(canvasData);
+    ctx.putImageData(imageData, 0, 0);
+
+    frameCount += 1;
+
+    ctx.font = "20px sans";
+    ctx.fillStyle = "white";
+    ctx.fillText("Frames: " + frameCount, 10, 60);
+
+    if (!solved) {
+        render(day, part);
+    }
+}
+
 
 let frameCounter = 0;
 
 function initSolutionCanvas() {
-    let ctx = document.getElementById("solutioncanvas").getContext("2d");
     let renderFps = () => {
         ctx.clearRect(0, 0, 750, 750);
         ctx.font = "20px sans";
@@ -72,10 +122,12 @@ const closeWindow = () => {
 }
 
 const solve = (day, part, hasVisualisation) => {
+    solved = false;
     if (hasVisualisation) {
         document.getElementById("solutioncontainer").style.display = "block";
         document.getElementById("canvasresultsection").style.display = "block";
         document.getElementById("canvasresult").innerHTML = "Working..."
+        render(day, part);
     } else {
         document.getElementById("solutioncontainer").style.display = "none";
         document.getElementById("normalresultsection").style.display = "block";
