@@ -73,7 +73,7 @@ toStr :: (va: ..any) -> str {
     // This function is intended to format single variables so we only need a small buffer
     buffer: [128] u8;
     out := conv.format_va(buffer, "{}", va);
-    return string.alloc_copy(out, allocator=context.temp_allocator);
+    return string.alloc_copy(out);
 }
 
 set_to_str :: (s: &Set($T)) -> str {

@@ -127,7 +127,7 @@ const solve = (day, part, hasVisualisation) => {
         document.getElementById("solutioncontainer").style.display = "block";
         document.getElementById("canvasresultsection").style.display = "block";
         document.getElementById("canvasresult").innerHTML = "Working..."
-        render(day, part);
+        // render(day, part);
     } else {
         document.getElementById("solutioncontainer").style.display = "none";
         document.getElementById("normalresultsection").style.display = "block";

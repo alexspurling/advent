@@ -7,7 +7,7 @@ onmessage = async (e) => {
     if (e.data.msg === "init") {
         memory = e.data.memory;
         wasmInstance = await loadWasmInstance("advent.wasm", memory);
-        // This only needs to be called once for a given instance of shared memory but don't forget this otherwise nothing will work
+        // This must be called before any calls to Onyx's exported functions are made
         initOnyx(wasmInstance);
     } else if (e.data.msg === "description") {
         const day = e.data.day;
