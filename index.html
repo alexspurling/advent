@@ -97,14 +97,11 @@
         cursor: pointer;
         color: whitesmoke;
     }
-    #canvasresultsection {
-        position: absolute;
-        top: 10px;
-        left: 10px;
-    }
-    #solutioncontainer {
-        position: relative;
+    #resultsection {
         display: none;
+    }
+    #solutioncanvas {
+        display: block;
     }
 
 </style>
@@ -137,12 +134,10 @@
             <h2 id="day">Day 1</h2>
             <a class="closebutton" onclick="return closeWindow()">&times;</a>
             <p id="description">Calculate the calbration values for the trebuchet.</p>
-            <p><a href="#" id="part1">Part 1</a>&nbsp;<a href="#" id="part2">Part 2</a></p>
-            <div id="solutioncontainer">
-                <canvas id="solutioncanvas" width="750" height="750"></canvas>
-                <div id="canvasresultsection">Result: <span id="canvasresult"></span></div>
-            </div>
-            <div id="normalresultsection">Result: <span id="normalresult"></span></div>
+            <p>
+                <a href="#" id="part1">Part 1</a>&nbsp;<a href="#" id="part2">Part 2</a>&nbsp;<span id="resultsection">Result: <span id="result">12312</span></span>
+            </p>
+            <canvas id="solutioncanvas" width="750" height="750"></canvas>
         </div>
         <canvas id="snowcanvas" width="1024" height="1024"></canvas>
     </div>

@@ -21,14 +21,9 @@ function initSolver() {
             document.getElementById("description").innerHTML = e.data.value;
         } else if (e.data.msg == "progress") {
             const progress = e.data.value;
-            document.getElementById("canvasresult").innerHTML = "(progress: " + progress.toFixed(1) + "%)";
-            document.getElementById("normalresult").innerHTML = "(progress: " + progress.toFixed(1) + "%)";
+            document.getElementById("result").innerHTML = "(progress: " + progress.toFixed(1) + "%)";
         } else if (e.data.msg == "result") {
-            if (e.data.hasVisualisation) {
-                document.getElementById("canvasresult").innerHTML = e.data.value;
-            } else {
-                document.getElementById("normalresult").innerHTML = e.data.value;
-            }
+            document.getElementById("result").innerHTML = e.data.value;
             solved = true;
         } else {
             console.log("Received unexpected result from worker", e);
@@ -76,9 +71,9 @@ function drawCanvas(day, part) {
 
     frameCount += 1;
 
-    ctx.font = "20px sans";
+    ctx.font = "18px sans";
     ctx.fillStyle = "white";
-    ctx.fillText("Frames: " + frameCount, 10, 60);
+    ctx.fillText("Frames: " + frameCount, 650, 25);
 
     if (!solved) {
         render(day, part);
@@ -105,8 +100,7 @@ const openWindow = (day, hasVisualisation) => {
     document.getElementById("part1").onclick = () => {return solve(day, 1, hasVisualisation)};
     document.getElementById("part2").onclick = () => {return solve(day, 2, hasVisualisation)};
 
-    document.getElementById("normalresultsection").style.display = "none";
-    document.getElementById("canvasresultsection").style.display = "none";
+    // document.getElementById("resultsection").style.display = "none";
 
     solver.postMessage({msg: "description", day});
 
@@ -117,25 +111,21 @@ const openWindow = (day, hasVisualisation) => {
 
 const closeWindow = () => {
     document.getElementById("window").style.display = "none";
-
     return false;
 }
 
 const solve = (day, part, hasVisualisation) => {
     solved = false;
     if (hasVisualisation) {
-        document.getElementById("solutioncontainer").style.display = "block";
-        document.getElementById("canvasresultsection").style.display = "block";
-        document.getElementById("canvasresult").innerHTML = "Working..."
-        // render(day, part);
+        document.getElementById("solutioncanvas").style.display = "block";
+        render(day, part);
     } else {
-        document.getElementById("solutioncontainer").style.display = "none";
-        document.getElementById("normalresultsection").style.display = "block";
-        document.getElementById("normalresult").innerHTML = "Working..."
+        document.getElementById("solutioncanvas").style.display = "none";
     }
+    document.getElementById("resultsection").style.display = "inline";
+    document.getElementById("result").innerHTML = "Working..."
 
-    solver.postMessage({msg: "solve", day, part, hasVisualisation});
-
+    solver.postMessage({msg: "solve", day, part});
     return false;
 }
 

@@ -161,7 +161,7 @@ setPixel :: (x: i32, y: i32, pixel: Colour) {
         CANVAS_BUFFER_POINTER[bufferIdx + 2] = pixel.b;
         CANVAS_BUFFER_POINTER[bufferIdx + 3] = pixel.a;
     } else {
-        printf("Setting pixel out of bounds: x: {}, y: {}, idx: {}\n", x, y, bufferIdx);
+        // printf("Setting pixel out of bounds: x: {}, y: {}, idx: {}\n", x, y, bufferIdx);
     }
 }
 

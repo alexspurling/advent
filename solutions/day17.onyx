@@ -71,7 +71,7 @@ opposite :: (d: Direction) -> Direction {
 
 
 // Variables used for visualisation
-// lastCrucibleState : CrucibleState;
+lastCrucibleState : CrucibleState;
 // recentlyUpdatedDistances: [..] Pos;
 // minDistances : Map(Pos, i32);
 
@@ -83,7 +83,7 @@ getShortestPathStep :: (city: [] str, targetPos: Pos, distances: &Map(CrucibleSt
 
     curState := heap.remove_top(queue);
 
-    // lastCrucibleState = curState;
+    lastCrucibleState = curState;
 
     if curState.pos == targetPos {
         printf("Found solution: {} with queue size {}\n", curState, queue.data.count);
@@ -141,15 +141,18 @@ solve_part_1 :: () -> str {
     defer map.free(&prev);
     queue := heap.make(CrucibleState, (p1: CrucibleState, p2: CrucibleState) => cmp(p1.distance, p2.distance));
     defer array.free(&queue.data);
-    queue << CrucibleState.{startPos, Direction.NORTH, 1}; // Pretend we arrived at 0,0 going north because that will force a "direction change"
+
+    lastCrucibleState = CrucibleState.{startPos, Direction.UNKNOWN, 1};
+    queue << lastCrucibleState;
 
     curState: CrucibleState;
     numSteps := 0;
+
     while !array.empty(queue.data) {
         curState = getShortestPathStep(city, targetPos, &distances, &visited, &prev, &queue);
-        // if numSteps % 50000 == 0 {
-        //     progress(cast(f64) numSteps / 9333);
-        // }
+        if numSteps % 50000 == 0 {
+            progress(cast(f64) numSteps / 9333);
+        }
         numSteps += 1;
     }
 
@@ -157,14 +160,14 @@ solve_part_1 :: () -> str {
 }
 
 render :: () {
-    // canvas.lock();
+    canvas.lock();
     // canvas.clear();
 
-    // posX := lastCrucibleState.pos.x * 5;
-    // posY := lastCrucibleState.pos.x * 5;
+    posX := 25 + lastCrucibleState.pos.x * 5;
+    posY := 25 + lastCrucibleState.pos.y * 5;
 
-    // canvas.drawRect(posX, posY, 4, 4, Colour.{255, 0, 0, 255});
-    // canvas.unlock();
+    canvas.drawRect(posX, posY, 4, 4, Colour.{255, 0, 0, 255});
+    canvas.unlock();
 }
 
 

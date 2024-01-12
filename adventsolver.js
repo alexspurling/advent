@@ -17,11 +17,10 @@ onmessage = async (e) => {
     } else if (e.data.msg === "solve") {
         const day = e.data.day;
         const part = e.data.part;
-        const hasVisualisation = e.data.hasVisualisation;
         const startTime = new Date().getTime();
         const result = getOnyxString(memory, wasmInstance.exports.solve(day, part));
         console.log("Result: ", result, "in " + (new Date().getTime() - startTime) + "ms");
-        postMessage({msg: "result", value: result, hasVisualisation});
+        postMessage({msg: "result", value: result});
     } else {
         console.log("Received unknown message", e.data);
     }
