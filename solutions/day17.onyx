@@ -14,6 +14,7 @@ use common {Pos, cmp, Direction, progress}
 use core.heap
 use canvas
 use canvas {Colour}
+use core.intrinsics.atomics {__atomic_load, __atomic_store}
 
 
 desc := "Find the best path to transport the lava crucible through the city from the laval pool to the machine parts factory."
@@ -72,13 +73,14 @@ opposite :: (d: Direction) -> Direction {
 
 // Variables used for visualisation
 lastCrucibleState : CrucibleState;
+prev : Map(CrucibleState, CrucibleState);
 // recentlyUpdatedDistances: [..] Pos;
 // minDistances : Map(Pos, i32);
 
 
 
 getShortestPathStep :: (city: [] str, targetPos: Pos, distances: &Map(CrucibleState, i32), visited: &Set(CrucibleState),
-                        prev: &Map(CrucibleState, CrucibleState), queue: &heap.Heap(CrucibleState)) -> CrucibleState {
+                        queue: &heap.Heap(CrucibleState)) -> CrucibleState {
     canvas.lock();
 
     curState := heap.remove_top(queue);
@@ -113,6 +115,7 @@ getShortestPathStep :: (city: [] str, targetPos: Pos, distances: &Map(CrucibleSt
                     neighbourState = CrucibleState.{neighbour, neighbourDirection, 1, neighbourDistance};
                 }
                 heap.insert(queue, neighbourState);
+                map.put(&prev, neighbourState, curState);
                 // printf("Adding neighbour ({}, {})\n", neighbour.x, neighbour.y);
             }
         }
@@ -121,6 +124,11 @@ getShortestPathStep :: (city: [] str, targetPos: Pos, distances: &Map(CrucibleSt
     canvas.unlock();
 
     return curState;
+}
+
+initialised := 0;
+setInitialised :: (setTo: i32) {
+    __atomic_store(&initialised, setTo);
 }
 
 
@@ -137,36 +145,64 @@ solve_part_1 :: () -> str {
     defer map.free(&distances);
     visited := set.make(CrucibleState);
     defer set.free(&visited);
-    prev := map.make(CrucibleState, CrucibleState);
+    prev = map.make(CrucibleState, CrucibleState);
     defer map.free(&prev);
     queue := heap.make(CrucibleState, (p1: CrucibleState, p2: CrucibleState) => cmp(p1.distance, p2.distance));
     defer array.free(&queue.data);
 
-    lastCrucibleState = CrucibleState.{startPos, Direction.UNKNOWN, 1};
+    lastCrucibleState = CrucibleState.{startPos, Direction.UNKNOWN, 0};
     queue << lastCrucibleState;
 
     curState: CrucibleState;
     numSteps := 0;
 
+    // Don't allow render() to do anything shared objects are uninitialised
+    setInitialised(1);
+
     while !array.empty(queue.data) {
-        curState = getShortestPathStep(city, targetPos, &distances, &visited, &prev, &queue);
+        curState = getShortestPathStep(city, targetPos, &distances, &visited, &queue);
         if numSteps % 50000 == 0 {
             progress(cast(f64) numSteps / 9333);
         }
         numSteps += 1;
     }
 
+    // If the render function is still running then wait until it finishes before setting resetting initialised flag
+    // This will allow us to free any shared data and avoid illegal access
+    canvas.lock();
+    setInitialised(0);
+    canvas.unlock();
+
     return toStr(curState.distance);
 }
 
 render :: () {
+
+    if __atomic_load(&initialised) == 0 {
+        return;
+    }
+
     canvas.lock();
-    // canvas.clear();
+    canvas.clear();
 
     posX := 25 + lastCrucibleState.pos.x * 5;
     posY := 25 + lastCrucibleState.pos.y * 5;
 
+    // if (lastCrucibleState.pos.x == 0 && lastCrucibleState.pos.y == 0) {
+        // printf("Render state is 0\n");
+    // }
+
     canvas.drawRect(posX, posY, 4, 4, Colour.{255, 0, 0, 255});
+
+    // initialState := CrucibleState.{Pos.{0, 0}, Direction.UNKNOWN, 0};
+    // prevState := map.get(&prev, lastCrucibleState)->value_or(initialState);
+    // while prevState.pos != Pos.{0, 0} {
+    //     posX := 25 + prevState.pos.x * 5;
+    //     posY := 25 + prevState.pos.y * 5;
+    //     canvas.drawRect(posX, posY, 4, 4, Colour.{0, 0, 255, 255});
+    //     prevState = map.get(&prev, prevState)->value_or(initialState);
+    // }
+
     canvas.unlock();
 }
 
