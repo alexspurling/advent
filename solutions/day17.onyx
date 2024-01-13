@@ -81,6 +81,12 @@ setup :: () {
     if __atomic_cmpxchg(&initialised, 0, 1) == 0 {
         canvas.lock();
 
+        map.free(&distances);
+        map.free(&prev);
+        map.free(&minDistances);
+        array.free(&queue.data);
+        set.free(&visited);
+
         // Set the params
         input := #file_contents "inputs/day17.txt";
         city = string.split(input, '\n');
@@ -196,9 +202,9 @@ render :: () {
 
     canvas.lock();
 
-    canvas.clear();
-
     if __atomic_load(&initialised) == 1 {
+
+        canvas.clear();
 
         canvas.drawRect(0, 0, 750, 750, Colour.{100, 0, 0, 255});
 

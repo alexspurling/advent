@@ -17,6 +17,7 @@ window.onload = function () {
     solver.postMessage({msg: "init", memory});
 }
 
+
 function initSolver() {
     solver = new Worker("adventsolver.js");
     solver.onmessage = (e) => {
@@ -31,6 +32,8 @@ function initSolver() {
         } else if (e.data.msg == "result") {
             document.getElementById("result").innerHTML = e.data.value;
             solved = true;
+            // Render the final state of the solution
+            render(e.data.day, e.data.part);
         } else {
             console.log("Received unexpected result from worker", e);
         }

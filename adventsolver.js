@@ -22,7 +22,7 @@ onmessage = async (e) => {
         const startTime = new Date().getTime();
         const result = getOnyxString(solverMemory, solverWasmInstance.exports.solve(day, part));
         console.log("Result: ", result, "in " + (new Date().getTime() - startTime) + "ms");
-        postMessage({msg: "result", value: result});
+        postMessage({msg: "result", value: result, day, part});
     } else {
         console.log("Received unknown message", e.data);
     }
