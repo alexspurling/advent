@@ -15,6 +15,7 @@ use core.heap
 use canvas
 use canvas {Colour}
 use core.intrinsics.atomics {__atomic_wait, __atomic_notify, __atomic_cmpxchg, __atomic_store, __atomic_load}
+use core.math
 
 
 desc := "Find the best path to transport the lava crucible through the city from the laval pool to the machine parts factory."
@@ -110,10 +111,16 @@ solve_part_1 :: () -> str {
     printf("Solving...\n");
     __atomic_store(&initialised, 0);
     setup();
+
+    numSteps := 0;
     while !array.empty(queue.data) {
         getShortestPathStep();
+        numSteps += 1;
+        if numSteps % 1000 == 0 {
+            progress(cast(f64) numSteps / 9333.0);
+        }
     }
-    printf("Solved...\n");
+    printf("Solved in {} steps\n", numSteps);
     return toStr(lastCrucibleState.distance);
 }
 
@@ -198,6 +205,26 @@ renderCell :: (posX: i32, posY: i32, distance: i32, colour: Colour) {
     }
 }
 
+
+gradientYellowRed := .[Colour.{255, 255, 0, 255}, Colour.{255, 0, 0, 255}];
+gradientGreyToGrey := .[Colour.{50, 50, 50, 255}, Colour.{200, 200, 200, 255}];
+
+colourFromGradient :: (value: i32, maxValue: i32, gradient: [] Colour) -> Colour {
+    clampedValue := math.max(math.min(value, maxValue), 0);
+    normalised := cast(f64) clampedValue / cast(f64) maxValue;
+    index := cast(i32) (normalised * cast(f64) (gradient.count - 1));
+    left := gradient[index];
+    right := gradient[index + 1];
+    valuePerColour := cast(i32) (cast(f64) maxValue / cast(f64) (gradient.count - 1));
+    weight := cast(f64) (clampedValue % valuePerColour) / cast(f64) valuePerColour;
+
+    r := cast(u8) cast(i32) (cast(f64) (cast(i32) left.r) * (1 - weight) + (cast(f64) (cast(i32) right.r)) * weight);
+    g := cast(u8) cast(i32) (cast(f64) (cast(i32) left.g) * (1 - weight) + (cast(f64) (cast(i32) right.g)) * weight);
+    b := cast(u8) cast(i32) (cast(f64) (cast(i32) left.b) * (1 - weight) + (cast(f64) (cast(i32) right.b)) * weight);
+    return Colour.{r, g, b, 255};
+}
+
+
 render :: () {
 
     canvas.lock();
@@ -206,8 +233,6 @@ render :: () {
 
         canvas.clear();
 
-        canvas.drawRect(0, 0, 750, 750, Colour.{100, 0, 0, 255});
-
         // Render all calculated distances
         for y: 0 .. city.count {
             for x: 0 .. city[0].count {
@@ -215,16 +240,12 @@ render :: () {
 
                 distance := map.get(&minDistances, pos);
 
-                if distance == .None {
-                } else {
+                if !(distance == .None) {
                     posX := 22 + x * 5;
                     posY := 22 + y * 5;
 
-                    distanceValue := 255 * cast(f64) distance->unwrap() / 1024.0;
-                    distanceInt := cast(u8) cast(i32) distanceValue;
-                    y := 255 - distanceInt;
-
-                    canvas.drawRect(posX, posY, 5, 5, Colour.{255, y, 100, 255});
+                    colour := colourFromGradient(distance->unwrap(), 1024, gradientGreyToGrey);
+                    canvas.drawRect(posX, posY, 5, 5, colour);
                 }
             }
         }
@@ -242,11 +263,15 @@ render :: () {
         while prevState.pos != Pos.{0, 0} && pathLength < 1024 {
             posX := 22 + prevState.pos.x * 5;
             posY := 22 + prevState.pos.y * 5;
-            canvas.drawRect(posX, posY, 4, 4, Colour.{0, 0, 255, 255});
+
+            colour := colourFromGradient(prevState.distance, 1024, gradientYellowRed);
+            canvas.drawRect(posX, posY, 4, 4, colour);
             prevState = map.get(&prev, prevState)->value_or(initialState);
             pathLength += 1;
         }
 
+    } else {
+        printf("Trying to render while uninitialised\n");
     }
 
     canvas.unlock();
