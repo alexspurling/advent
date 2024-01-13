@@ -40,8 +40,8 @@ function initSolver() {
     };
     // Initialise the shared memory object
     memory = new WebAssembly.Memory({
-        initial: 1024,
-        maximum: 1024,
+        initial: 4096,
+        maximum: 4096,
         shared: true
       });
     wasmByteMemoryArray = new Uint8Array(memory.buffer);

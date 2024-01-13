@@ -99,7 +99,8 @@ setup :: () {
         visited = set.make(CrucibleState);
         prev = map.make(CrucibleState, CrucibleState);
         queue = heap.make(CrucibleState, (p1, p2) => cmp(p1.distance, p2.distance));
-        queue << CrucibleState.{startPos, Direction.UNKNOWN, 0};
+        queue << CrucibleState.{startPos, Direction.SOUTH, 0};
+        queue << CrucibleState.{startPos, Direction.EAST, 0};
 
         minDistances = map.make(Pos, i32);
         map.put(&minDistances, startPos, 0);
@@ -112,11 +113,14 @@ solve_part_1 :: () -> str {
     __atomic_store(&initialised, 0);
     setup();
 
+    minSteps := 0;
+    maxSteps := 3;
     numSteps := 0;
     while !array.empty(queue.data) {
-        getShortestPathStep();
+        getShortestPathStep(minSteps, maxSteps);
         numSteps += 1;
         if numSteps % 1000 == 0 {
+            // printf("distances: {}, visited: {}, prev: {}, queue: {}\n", distances.entries.count, visited.entries.count, prev.entries.count, queue.data.count);
             progress(cast(f64) numSteps / 9333.0);
         }
     }
@@ -125,7 +129,23 @@ solve_part_1 :: () -> str {
 }
 
 solve_part_2 :: () -> str {
-    return "";
+    printf("Solving...\n");
+    __atomic_store(&initialised, 0);
+    setup();
+
+    minSteps := 4;
+    maxSteps := 10;
+    numSteps := 0;
+    while !array.empty(queue.data) {
+        getShortestPathStep(minSteps, maxSteps);
+        numSteps += 1;
+        if numSteps % 1000 == 0 {
+            // printf("distances: {}, visited: {}, prev: {}, queue: {}\n", distances.entries.count, visited.entries.count, prev.entries.count, queue.data.count);
+            progress(cast(f64) numSteps / 30339.0);
+        }
+    }
+    printf("Solved in {} steps\n", numSteps);
+    return toStr(lastCrucibleState.distance);
 }
 
 
@@ -141,14 +161,14 @@ opposite :: (d: Direction) -> Direction {
 
 NEIGHBOURS :: .[Pos.{0, 1}, Pos.{1, 0}, Pos.{0, -1}, Pos.{-1, 0}];
 
-getShortestPathStep :: () {
+getShortestPathStep :: (minSteps: i32, maxSteps: i32) {
     canvas.lock();
 
     curState := heap.remove_top(&queue);
 
     lastCrucibleState = curState;
 
-    if curState.pos == targetPos {
+    if curState.pos == targetPos && curState.numSteps >= minSteps {
         printf("Found solution: {} with queue size {}\n", curState, queue.data.count);
         // map.put(&distances, curState, curState.distance);
         // empty the queue
@@ -170,9 +190,9 @@ getShortestPathStep :: () {
                 neighbourDirection := getDirection(curState.pos, neighbour);
                 neighbourState: CrucibleState;
 
-                if neighbourDirection == curDirection && curState.numSteps < 3 {
+                if neighbourDirection == curDirection && curState.numSteps < maxSteps {
                     neighbourState = CrucibleState.{neighbour, neighbourDirection, curState.numSteps + 1, neighbourDistance};
-                } elseif neighbourDirection != curDirection && neighbourDirection != opposite(curDirection) {
+                } elseif neighbourDirection != curDirection && neighbourDirection != opposite(curDirection) && curState.numSteps >= minSteps {
                     neighbourState = CrucibleState.{neighbour, neighbourDirection, 1, neighbourDistance};
                 }
                 queue << neighbourState;
@@ -225,6 +245,9 @@ colourFromGradient :: (value: i32, maxValue: i32, gradient: [] Colour) -> Colour
 }
 
 
+scale := 5;
+
+
 render :: () {
 
     canvas.lock();
@@ -241,19 +264,19 @@ render :: () {
                 distance := map.get(&minDistances, pos);
 
                 if !(distance == .None) {
-                    posX := 22 + x * 5;
-                    posY := 22 + y * 5;
+                    posX := 22 + x * scale;
+                    posY := 22 + y * scale;
 
                     colour := colourFromGradient(distance->unwrap(), 1024, gradientGreyToGrey);
-                    canvas.drawRect(posX, posY, 5, 5, colour);
+                    canvas.drawRect(posX, posY, scale, scale, colour);
                 }
             }
         }
 
         // Render most recent state
-        posX := 22 + lastCrucibleState.pos.x * 5;
-        posY := 22 + lastCrucibleState.pos.y * 5;
-        canvas.drawRect(posX, posY, 4, 4, Colour.{255, 0, 0, 255});
+        posX := 22 + lastCrucibleState.pos.x * scale;
+        posY := 22 + lastCrucibleState.pos.y * scale;
+        canvas.drawRect(posX, posY, scale, scale, Colour.{255, 0, 0, 255});
 
         // Draw the path to the most recent state
         initialState := CrucibleState.{startPos, Direction.UNKNOWN, 0};
@@ -261,11 +284,11 @@ render :: () {
 
         pathLength := 0;
         while prevState.pos != Pos.{0, 0} && pathLength < 1024 {
-            posX := 22 + prevState.pos.x * 5;
-            posY := 22 + prevState.pos.y * 5;
+            posX := 22 + prevState.pos.x * scale;
+            posY := 22 + prevState.pos.y * scale;
 
             colour := colourFromGradient(prevState.distance, 1024, gradientYellowRed);
-            canvas.drawRect(posX, posY, 4, 4, colour);
+            canvas.drawRect(posX, posY, scale, scale, colour);
             prevState = map.get(&prev, prevState)->value_or(initialState);
             pathLength += 1;
         }
