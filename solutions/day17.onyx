@@ -14,7 +14,7 @@ use common {Pos, cmp, Direction, progress}
 use core.heap
 use canvas
 use canvas {Colour}
-use core.intrinsics.atomics {__atomic_load, __atomic_store}
+use core.intrinsics.atomics {__atomic_wait, __atomic_notify, __atomic_cmpxchg, __atomic_store, __atomic_load}
 
 
 desc := "Find the best path to transport the lava crucible through the city from the laval pool to the machine parts factory."
@@ -60,6 +60,62 @@ getDirection :: (curPos: Pos, nextPos: Pos) -> Direction {
     return Direction.WEST;
 }
 
+
+city: [] str;
+startPos: Pos;
+targetPos: Pos;
+distances : Map(CrucibleState, i32);
+visited : Set(CrucibleState);
+prev : Map(CrucibleState, CrucibleState);
+queue : heap.Heap(CrucibleState);
+
+// Variables used for visualisation
+lastCrucibleState : CrucibleState;
+recentlyUpdatedDistances: [..] Pos;
+minDistances : Map(Pos, i32);
+
+initialised := 0;
+
+
+setup :: () {
+    if __atomic_cmpxchg(&initialised, 0, 1) == 0 {
+        canvas.lock();
+
+        // Set the params
+        input := #file_contents "inputs/day17.txt";
+        city = string.split(input, '\n');
+        startPos = Pos.{0, 0};
+        targetPos = Pos.{city[0].length - 1, city.length - 1};
+
+        // Initialise the search
+        distances = map.make(CrucibleState, i32);
+        visited = set.make(CrucibleState);
+        prev = map.make(CrucibleState, CrucibleState);
+        queue = heap.make(CrucibleState, (p1, p2) => cmp(p1.distance, p2.distance));
+        queue << CrucibleState.{startPos, Direction.UNKNOWN, 0};
+
+        minDistances = map.make(Pos, i32);
+        map.put(&minDistances, startPos, 0);
+        canvas.unlock();
+    }
+}
+
+solve_part_1 :: () -> str {
+    printf("Solving...\n");
+    __atomic_store(&initialised, 0);
+    setup();
+    while !array.empty(queue.data) {
+        getShortestPathStep();
+    }
+    printf("Solved...\n");
+    return toStr(lastCrucibleState.distance);
+}
+
+solve_part_2 :: () -> str {
+    return "";
+}
+
+
 opposite :: (d: Direction) -> Direction {
     switch d {
         case Direction.NORTH do return Direction.SOUTH;
@@ -70,171 +126,123 @@ opposite :: (d: Direction) -> Direction {
     return Direction.UNKNOWN;
 }
 
+NEIGHBOURS :: .[Pos.{0, 1}, Pos.{1, 0}, Pos.{0, -1}, Pos.{-1, 0}];
 
-city: [] str;
-distances : Map(CrucibleState, i32);
-visited : Set(CrucibleState);
-queue : heap.Heap(CrucibleState);
-
-
-// Variables used for visualisation
-lastCrucibleState : CrucibleState;
-prev : Map(CrucibleState, CrucibleState);
-// recentlyUpdatedDistances: [..] Pos;
-// minDistances : Map(Pos, i32);
-
-
-initialised := 0;
-setInitialised :: (setTo: i32) {
-    __atomic_store(&initialised, setTo);
-}
-
-
-solve_part_1 :: () -> str {
-
+getShortestPathStep :: () {
     canvas.lock();
-    // printf("Starting to solve part 1\n");
-    input := #file_contents "inputs/day17.txt";
 
-    city := string.split(input, '\n');
+    curState := heap.remove_top(&queue);
 
-    // printf("City: {}\n", &city);
+    lastCrucibleState = curState;
 
-    startPos := Pos.{0, 0};
-    targetPos := Pos.{city[0].length - 1, city.length - 1};
+    if curState.pos == targetPos {
+        printf("Found solution: {} with queue size {}\n", curState, queue.data.count);
+        // map.put(&distances, curState, curState.distance);
+        // empty the queue
+        while !array.empty(queue.data) {
+            heap.remove_top(&queue);
+        }
+    } elseif !set.has(&visited, curState) {
+        set.insert(&visited, curState);
 
-    distances := map.make(CrucibleState, i32);
-    visited := set.make(CrucibleState);
-    prev = map.make(CrucibleState, CrucibleState);
-    queue := heap.make(CrucibleState, (p1: CrucibleState, p2: CrucibleState) => cmp(p1.distance, p2.distance));
+        curDirection := curState.direction;
+        curDistance := curState.distance;
 
-    lastCrucibleState = CrucibleState.{startPos, Direction.UNKNOWN, 0};
-    queue << lastCrucibleState;
+        neighbours: [4] Pos = NEIGHBOURS;
+        for n: neighbours {
+            neighbour := Pos.{curState.pos.x + n.x, curState.pos.y + n.y};
+            if neighbour.x >= 0 && neighbour.x < city[0].count && neighbour.y >= 0 && neighbour.y < city.count {
+                blockCost := getCityCost(city, neighbour);
+                neighbourDistance := curDistance + blockCost;
+                neighbourDirection := getDirection(curState.pos, neighbour);
+                neighbourState: CrucibleState;
 
-    numSteps := 0;
+                if neighbourDirection == curDirection && curState.numSteps < 3 {
+                    neighbourState = CrucibleState.{neighbour, neighbourDirection, curState.numSteps + 1, neighbourDistance};
+                } elseif neighbourDirection != curDirection && neighbourDirection != opposite(curDirection) {
+                    neighbourState = CrucibleState.{neighbour, neighbourDirection, 1, neighbourDistance};
+                }
+                queue << neighbourState;
 
-    // Don't allow render() to do anything while shared objects are uninitialised
-    setInitialised(1);
-    canvas.unlock();
-
-    while !array.empty(queue.data) {
-        canvas.lock();
-
-        curState := heap.remove_top(&queue);
-
-        // printf("Current state: {}\n", curState);
-
-        lastCrucibleState = curState;
-
-        if curState.pos == targetPos {
-            // printf("Found solution: {} with queue size {}\n", curState, queue.data.count);
-            // map.put(&distances, curState, curState.distance);
-            while !array.empty(queue.data) {
-                // empty the queue
-                heap.remove_top(&queue);
-            }
-        } elseif !set.has(&visited, curState) {
-            set.insert(&visited, curState);
-
-            curDirection := curState.direction;
-            curDistance := curState.distance;
-
-            neighbours: [4] Pos = .[Pos.{0, 1}, Pos.{1, 0}, Pos.{0, -1}, Pos.{-1, 0}];
-            for n: neighbours {
-                neighbour := Pos.{curState.pos.x + n.x, curState.pos.y + n.y};
-                if neighbour.x >= 0 && neighbour.x < city[0].count && neighbour.y >= 0 && neighbour.y < city.count {
-                    blockCost := getCityCost(city, neighbour);
-                    neighbourDistance := curDistance + blockCost;
-                    neighbourDirection := getDirection(curState.pos, neighbour);
-                    neighbourState: CrucibleState;
-
-                    if neighbourDirection == curDirection && curState.numSteps < 3 {
-                        neighbourState = CrucibleState.{neighbour, neighbourDirection, curState.numSteps + 1, neighbourDistance};
-                    } elseif neighbourDirection != curDirection && neighbourDirection != opposite(curDirection) {
-                        neighbourState = CrucibleState.{neighbour, neighbourDirection, 1, neighbourDistance};
-                    }
-                    heap.insert(&queue, neighbourState);
-
-                    // if neighbourDistance < map.get(&minDistances, neighbour)->value_or(MAX_INT) {
-                    //     map.put(&minDistances, neighbour, neighbourDistance);
-                    //     map.put(&prev, neighbourState, curState);
-                    // }
-
-                    // printf("Adding neighbour ({}, {})\n", neighbour.x, neighbour.y);
+                if neighbourDistance < map.get(&distances, neighbourState)->value_or(MAX_INT) {
+                    map.put(&distances, neighbourState, neighbourDistance);
+                    map.put(&prev, neighbourState, curState);
+                }
+                if neighbourDistance < map.get(&minDistances, neighbour)->value_or(MAX_INT) {
+                    map.put(&minDistances, neighbour, neighbourDistance);
                 }
             }
         }
-
-        canvas.unlock();
-        if numSteps % 50000 == 0 {
-            progress(cast(f64) numSteps / 9333);
-        }
-        numSteps += 1;
     }
 
-    // If the render function is still running then wait until it finishes before setting resetting initialised flag
-    // This will allow us to free any shared data and avoid concurrent access
-    canvas.lock();
-    setInitialised(0);
-    map.free(&distances);
-    set.free(&visited);
-    map.free(&prev);
-    array.free(&queue.data);
     canvas.unlock();
+}
 
-    return toStr(lastCrucibleState.distance);
+renderCell :: (posX: i32, posY: i32, distance: i32, colour: Colour) {
+    if distance < 10 {
+        canvas.drawChar('0', posX, posY, colour);
+        canvas.drawChar(cast(u8) ('0' + distance), posX + 10, posY, colour);
+    } elseif distance < 100 {
+        canvas.drawChar(cast(u8) ('0' + distance / 10), posX, posY, colour);
+        canvas.drawChar(cast(u8) ('0' + distance % 10), posX + 10, posY, colour);
+    } elseif distance < 1000 {
+        canvas.drawChar(cast(u8) ('0' + distance / 100), posX - 5, posY, colour);
+        canvas.drawChar(cast(u8) ('0' + (distance / 10) % 10), posX + 5, posY, colour);
+        canvas.drawChar(cast(u8) ('0' + distance % 10), posX + 15, posY, colour);
+    }
 }
 
 render :: () {
 
-    if __atomic_load(&initialised) == 0 {
-        return;
-    }
-
     canvas.lock();
-    // canvas.clear();
 
-    posX := 25 + lastCrucibleState.pos.x * 5;
-    posY := 25 + lastCrucibleState.pos.y * 5;
+    canvas.clear();
 
-    canvas.drawRect(posX, posY, 4, 4, Colour.{255, 0, 0, 255});
+    if __atomic_load(&initialised) == 1 {
 
-    // Uncommenting this line will break the solver thread for some reason
-    // initialState := CrucibleState.{Pos.{0, 0}, Direction.UNKNOWN, 0};
+        canvas.drawRect(0, 0, 750, 750, Colour.{100, 0, 0, 255});
 
-    for i: 0 .. 0 {
+        // Render all calculated distances
+        for y: 0 .. city.count {
+            for x: 0 .. city[0].count {
+                pos := Pos.{x, y};
+
+                distance := map.get(&minDistances, pos);
+
+                if distance == .None {
+                } else {
+                    posX := 22 + x * 5;
+                    posY := 22 + y * 5;
+
+                    distanceValue := 255 * cast(f64) distance->unwrap() / 1024.0;
+                    distanceInt := cast(u8) cast(i32) distanceValue;
+                    y := 255 - distanceInt;
+
+                    canvas.drawRect(posX, posY, 5, 5, Colour.{255, y, 100, 255});
+                }
+            }
+        }
+
+        // Render most recent state
+        posX := 22 + lastCrucibleState.pos.x * 5;
+        posY := 22 + lastCrucibleState.pos.y * 5;
+        canvas.drawRect(posX, posY, 4, 4, Colour.{255, 0, 0, 255});
+
+        // Draw the path to the most recent state
+        initialState := CrucibleState.{startPos, Direction.UNKNOWN, 0};
+        prevState := map.get(&prev, lastCrucibleState)->value_or(initialState);
+
+        pathLength := 0;
+        while prevState.pos != Pos.{0, 0} && pathLength < 1024 {
+            posX := 22 + prevState.pos.x * 5;
+            posY := 22 + prevState.pos.y * 5;
+            canvas.drawRect(posX, posY, 4, 4, Colour.{0, 0, 255, 255});
+            prevState = map.get(&prev, prevState)->value_or(initialState);
+            pathLength += 1;
+        }
 
     }
-
-
-    // prevState := map.get(&prev, lastCrucibleState)->value_or(initialState);
-
-    // while prevState.pos != Pos.{0, 0} {
-    //     posX := 25 + prevState.pos.x * 5;
-    //     posY := 25 + prevState.pos.y * 5;
-    //     canvas.drawRect(posX, posY, 4, 4, Colour.{0, 0, 255, 255});
-    //     prevState = map.get(&prev, prevState)->value_or(initialState);
-    // }
 
     canvas.unlock();
 }
 
-
-solve_part_2 :: () -> str {
-    return "";
-}
-
-
-exampleInput := """2413432311323
-3215453535623
-3255245654254
-3446585845452
-4546657867536
-1438598798454
-4457876987766
-3637877979653
-4654967986887
-4564679986453
-1224686865563
-2546548887735
-4322674655533""";

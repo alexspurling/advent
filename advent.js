@@ -68,7 +68,7 @@ let frameCount = 0;
 
 function drawCanvas(day, part) {
     // const canvasData = new Uint8Array(memory.buffer, canvasRef.canvasPointer, canvasRef.canvasSize);
-    const canvasData = wasmByteMemoryArray.slice(canvasRef.canvasPointer, canvasRef.canvasSize);
+    const canvasData = wasmByteMemoryArray.slice(canvasRef.canvasPointer, canvasRef.canvasPointer + canvasRef.canvasSize);
     const canvas = document.getElementById("solutioncanvas");
     const ctx = canvas.getContext("2d");
     const imageData = ctx.createImageData(canvas.width, canvas.height);
