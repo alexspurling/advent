@@ -169,8 +169,6 @@ getShortestPathStep :: (minSteps: i32, maxSteps: i32) {
     lastCrucibleState = curState;
 
     if curState.pos == targetPos && curState.numSteps >= minSteps {
-        printf("Found solution: {} with queue size {}\n", curState, queue.data.count);
-        // map.put(&distances, curState, curState.distance);
         // empty the queue
         while !array.empty(queue.data) {
             heap.remove_top(&queue);

@@ -80,9 +80,9 @@ function drawCanvas(day, part) {
 
     frameCount += 1;
 
-    ctx.font = "18px sans";
-    ctx.fillStyle = "white";
-    ctx.fillText("Frames: " + frameCount, 650, 25);
+    // ctx.font = "18px sans";
+    // ctx.fillStyle = "white";
+    // ctx.fillText("Frames: " + frameCount, 650, 25);
 
     if (!solved) {
         render(day, part);
