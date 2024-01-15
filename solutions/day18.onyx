@@ -1,0 +1,13 @@
+package day18
+
+
+desc := "Calculate the volume of land that can be excavated by the digger following the given instructions.";
+
+
+solve_part_1 :: () -> str {
+    return "";
+}
+
+solve_part_2 :: () -> str {
+    return "";
+}
