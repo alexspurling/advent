@@ -109,7 +109,6 @@ setup :: () {
 }
 
 solve_part_1 :: () -> str {
-    printf("Solving...\n");
     __atomic_store(&initialised, 0);
     setup();
 
