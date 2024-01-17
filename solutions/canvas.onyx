@@ -1,5 +1,6 @@
 package canvas
 
+use core.conv
 use core {printf}
 use core.math
 use core.intrinsics.wasm {memory_fill}
@@ -52,11 +53,21 @@ getCanvasPointer :: () -> rawptr {
     return &CANVAS_BUFFER_POINTER;
 }
 
+#tag conv.Custom_Format.{ format_color }
 Colour :: struct {
     r: u8;
     g: u8;
     b: u8;
     a: u8;
+}
+
+format_color :: (output: &conv.Format_Output, format: &conv.Format, c: &Colour) {
+    conv.format(output, "#{w2b16}{w2b16}{w2b16}{w2b16}",
+        cast(i32) c.r,
+        cast(i32) c.g,
+        cast(i32) c.b,
+        cast(i32) c.a,
+    );
 }
 
 // Font sheet:
@@ -127,7 +138,11 @@ drawArrow :: (xPos: i32, yPos: i32, direction: Direction, colour: Colour) {
 drawRect :: (xPos: i32, yPos: i32, width: i32, height: i32, colour: Colour) {
     for y: 0 .. height {
         for x: 0 .. width {
-            setPixel(xPos + x, yPos + y, colour);
+            pixelX := xPos + x;
+            pixelY := yPos + y;
+            if pixelX >= 0 && pixelX < CANVAS_WIDTH && pixelY >= 0 && pixelY < CANVAS_HEIGHT {
+                setPixel(xPos + x, yPos + y, colour);
+            }
         }
     }
 }
