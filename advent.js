@@ -5,6 +5,7 @@ let memory;
 
 let canvasRef;
 let solved = false;
+let finalFrameRequested = false;
 
 let particles = [];
 
@@ -32,8 +33,6 @@ function initSolver() {
         } else if (e.data.msg == "result") {
             document.getElementById("result").innerHTML = e.data.value;
             solved = true;
-            // Render the final state of the solution
-            render(e.data.day, e.data.part);
         } else {
             console.log("Received unexpected result from worker", e);
         }
@@ -58,6 +57,9 @@ function initRenderer() {
             const day = e.data.day;
             const part = e.data.part;
             requestAnimationFrame(() => drawCanvas(day, part));
+            if (solved) {
+                finalFrameRequested = true;
+            }
         }
     }
 }
@@ -84,8 +86,10 @@ function drawCanvas(day, part) {
     // ctx.fillStyle = "white";
     // ctx.fillText("Frames: " + frameCount, 650, 25);
 
-    if (!solved) {
+    if (!finalFrameRequested) {
         render(day, part);
+    } else {
+        renderer.postMessage({msg: "reset", day});
     }
 }
 
@@ -125,6 +129,7 @@ const closeWindow = () => {
 
 const solve = (day, part, hasVisualisation) => {
     solved = false;
+    finalFrameRequested = false;
     if (hasVisualisation) {
         document.getElementById("solutioncanvas").style.display = "block";
         render(day, part);

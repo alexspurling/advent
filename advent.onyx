@@ -1,4 +1,4 @@
-use core {println, printf}
+use core {printf}
 
 #load_all "./solutions"
 use day1
@@ -91,6 +91,8 @@ solve :: (day: i32, part: i32) -> &str {
         case .{18, 2} do solution = day18.solve_part_2();
     }
     return &solution;
+    // solution := "the solution";
+    // return &solution;
 }
 
 #export "render" render
@@ -98,8 +100,15 @@ render :: (day: i32, part: i32) {
     switch DayPart.{day, part} {
         case .{17, 1} do day17.render();
         case .{17, 2} do day17.render();
-        case .{18, 1} do day18.render();
-        case .{18, 2} do day18.render();
+        case .{18, 1} do day18.render_part_1();
+        case .{18, 2} do day18.render_part_2();
+    }
+}
+
+#export "reset" reset
+reset :: (day: i32) {
+    switch day {
+        case 18 do day18.reset();
     }
 }
 

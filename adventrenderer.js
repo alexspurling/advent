@@ -21,6 +21,9 @@ onmessage = async (e) => {
         const part = e.data.part;
         renderWasmInstance.exports.render(day, part);
         postMessage({msg: "rendered", day, part});
+    } else if (e.data.msg === "reset") {
+        const day = e.data.day;
+        renderWasmInstance.exports.reset(day);
     } else {
         console.log("Received unknown message", e.data);
     }

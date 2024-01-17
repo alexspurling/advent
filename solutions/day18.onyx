@@ -3,13 +3,12 @@ package day18
 use canvas
 use canvas {Colour}
 use core.set
-use common {Pos, Direction}
+use common {Pos, Direction, printf}
 use core.intrinsics.atomics {__atomic_wait, __atomic_notify, __atomic_cmpxchg, __atomic_store, __atomic_load}
 use core.conv {parse_int}
 use core.array
 use core.string
 use strings {toStr}
-use core {println, printf}
 use core.iter
 use core.math
 use core.hash
@@ -97,6 +96,7 @@ hash.hash :: (s: Square) -> i32 {
 
 grid: Set(Square);
 instructions: [..] Instruction;
+scaledInstructions: [..] Instruction;
 
 
 setup :: () {
@@ -162,7 +162,7 @@ excavatePerimeter :: () -> i32 {
         }
         numSquares += cast(i32) instruction.distance;
     }
-    printf("Exterior squares: {}\n", numSquares);
+    // printf("Exterior squares: {}\n", numSquares);
     return numSquares;
 }
 
@@ -216,7 +216,7 @@ excavateInterior :: () -> i32 {
             }
         }
     }
-    printf("Interior squares: {}\n", numSquares);
+    // printf("Interior squares: {}\n", numSquares);
     return numSquares;
 }
 
@@ -226,15 +226,11 @@ calculateDigVolume :: () -> i32 {
     return numSquares;
 }
 
-solved := false;
-
 solve_part_1 :: () -> str {
-    __atomic_store(&initialised, 0);
     setup();
     canvas.lock();
     volume := calculateDigVolume();
     canvas.unlock();
-    solved = true;
     return toStr(volume);
 }
 
@@ -289,44 +285,44 @@ setupPart2 :: () {
 }
 
 
+MIN_INT := -2147483648;
+MAX_INT := 2147483647;
 
-excavatePerimeterPart2 :: () -> u64 {
-    numSquares: u64 = 0;
+calculateMinMax :: (instructions: [] Instruction) -> (i32, i32, i32, i32) {
+    minX := MAX_INT;
+    minY := MAX_INT;
+    maxX := MIN_INT;
+    maxY := MIN_INT;
+
     pos := Pos.{0, 0};
-    // Fill the grid with all the positions described by the instructions
     for instruction: instructions {
+
+        minX = math.min(minX, pos.x);
+        minY = math.min(minY, pos.y);
+        maxX = math.max(maxX, pos.x);
+        maxY = math.max(maxY, pos.y);
+
         distance := instruction.distance;
-        adjustedDistance := cast(i32) distance; // / 5000;
-        printf("Pos: {}, Direction: {}, distance: {}, adjusted: {}\n", pos, instruction.direction, distance, adjustedDistance);
-        // for d: 0 .. adjustedDistance {
-        //     pos = getNextPos(pos, instruction.direction);
-        //     set.insert(&grid, Square.{pos, instruction.colour});
-        // }
-        set.insert(&grid, Square.{pos, instruction.colour});
         switch instruction.direction {
-            case Direction.NORTH do pos = Pos.{pos.x, pos.y - adjustedDistance};
-            case Direction.SOUTH do pos = Pos.{pos.x, pos.y + adjustedDistance};
-            case Direction.EAST do pos = Pos.{pos.x + adjustedDistance, pos.y};
-            case Direction.WEST do pos = Pos.{pos.x - adjustedDistance, pos.y};
+            case Direction.NORTH {
+                pos = Pos.{pos.x, pos.y - distance};
+            }
+            case Direction.SOUTH {
+                pos = Pos.{pos.x, pos.y + distance};
+            }
+            case Direction.EAST {
+                pos = Pos.{pos.x + distance, pos.y};
+            }
+            case Direction.WEST {
+                pos = Pos.{pos.x - distance, pos.y};
+            }
         }
-        numSquares += cast(u64) instruction.distance;
     }
-    printf("Exterior squares: {}\n", numSquares);
-    return numSquares;
+    return minX, minY, maxX, maxY;
 }
 
-Rect :: struct {
-    pos1: Pos;
-    pos2: Pos;
-    colour: Colour;
-}
-
-excavateInteriorPart2 :: () -> u64 {
-    minX := set.as_iter(&grid) |> iter.map((p) => p.pos.x) |> iter.fold(MAX_INT, (t, r) => math.min(t, r));
-    minY := set.as_iter(&grid) |> iter.map((p) => p.pos.y) |> iter.fold(MAX_INT, (t, r) => math.min(t, r));
-
-    maxX := set.as_iter(&grid) |> iter.map((p) => p.pos.x) |> iter.fold(MIN_INT, (t, r) => math.max(t, r));
-    maxY := set.as_iter(&grid) |> iter.map((p) => p.pos.y) |> iter.fold(MIN_INT, (t, r) => math.max(t, r));
+calculateVolume :: () -> u64 {
+    minX, minY, maxX, maxY := calculateMinMax(instructions);
 
     width := maxX - minX + 1;
     height := maxY - minY + 1;
@@ -337,26 +333,15 @@ excavateInteriorPart2 :: () -> u64 {
     for instruction: instructions {
         if instruction.direction == Direction.EAST {
             eastVolume := cast(u64) (height - (pos.y - minY)) * cast(u64) instruction.distance;
-            printf("height: {}, pos.y: {}, minY: {}, distance: {}, eastVolume: {}\n", height, pos.y, minY, instruction.distance, eastVolume);
             totalVolume += eastVolume;
-
-            rectPos1 := Pos.{pos.x, pos.y};
-            rectPos2 := Pos.{pos.x + instruction.distance + 10, maxY};
-            rects << Rect.{rectPos1, rectPos2, GREY};
         } elseif instruction.direction == Direction.WEST {
             westVolume := cast(u64) (height - (pos.y - minY) - 1) * cast(u64) instruction.distance;
-            printf("height: {}, pos.y: {}, minY: {}, distance: {}, westVolume: {}\n", height, pos.y, minY, instruction.distance, westVolume);
             totalVolume -= westVolume;
 
-
-            rectPos1 := Pos.{pos.x - instruction.distance, pos.y};
-            rectPos2 := Pos.{pos.x, maxY};
-            rects << Rect.{rectPos1, rectPos2, TRANSPARENT};
         } elseif instruction.direction == Direction.SOUTH {
             southDistance := instruction.distance;
             totalVolume += cast(u64) southDistance;
         }
-        // pos = getNextPos(pos, instruction.direction);
         distance := instruction.distance;
         switch instruction.direction {
             case Direction.NORTH do pos = Pos.{pos.x, pos.y - distance};
@@ -370,69 +355,46 @@ excavateInteriorPart2 :: () -> u64 {
     return totalVolume + 1;
 }
 
+Rect :: struct {
+    pos1: Pos;
+    pos2: Pos;
+    colour: Colour;
+}
 
-calculateDigVolumePart2 :: () -> u64 {
-    excavatePerimeterPart2();
-    numSquares := excavateInteriorPart2();
+calculateRects :: (instructions: [] Instruction, rects: &[..] Rect) {
+    minX, minY, maxX, maxY := calculateMinMax(instructions);
 
-    // xSquares := array.make(Pos);
-    // ySquares := array.make(Pos);
-
-    // for square: set.as_iter(&grid) {
-    //     xSquares << square.pos;
-    //     ySquares << square.pos;
-    // }
-
-    // array.quicksort (xSquares, (p1, p2) => p1.y - p2.y if p1.x == p2.x else p1.x - p2.x);
-    // array.quicksort (ySquares, (p1, p2) => p1.x - p2.x if p1.y == p2.y else p1.y - p2.y);
-
-    // printf("xSquares: {}\n", xSquares);
-    // printf("ySquares: {}\n", ySquares);
-
-    // curPos := Pos.{0, 0};
-    // nextX := curPos.x;
-    // nextY := curPos.y;
-
-    // for x: 0 .. 5 {
-    //     nextXPos := xSquares[x];
-
-    //     if nextXPos.x > nextX {
-    //         nextX = nextXPos.x;
-    //     }
-    //     if nextXPos.y > nextY {
-    //         nextY = nextXPos.y;
-    //     }
-
-    //     if nextX > curPos.x && nextY > curPos.y {
-    //         rect := Rect.{curPos, Pos.{nextX, nextY}};
-    //         rects << rect;
-    //         curPos = Pos.{nextX, curPos.y};
-    //         printf("Found rect: {}\n", rect);
-    //         printf("Cur pos is now: {}\n", curPos);
-    //     }
-    // }
-
-    // for a given location
-        // find the nearest +y location and +x location
-        // some of the time this will form the coord of the rect we need to paint
-
-    return numSquares;
+    pos := Pos.{0, 0};
+    for instruction: instructions {
+        if instruction.direction == Direction.EAST {
+            rectPos1 := Pos.{pos.x, pos.y};
+            rectPos2 := Pos.{pos.x + instruction.distance, maxY};
+            array.push(rects, Rect.{rectPos1, rectPos2, GREY});
+        } elseif instruction.direction == Direction.WEST {
+            rectPos1 := Pos.{pos.x - instruction.distance, pos.y};
+            rectPos2 := Pos.{pos.x, maxY};
+            array.push(rects, Rect.{rectPos1, rectPos2, TRANSPARENT});
+        }
+        distance := instruction.distance;
+        switch instruction.direction {
+            case Direction.NORTH do pos = Pos.{pos.x, pos.y - distance};
+            case Direction.SOUTH do pos = Pos.{pos.x, pos.y + distance};
+            case Direction.EAST do pos = Pos.{pos.x + distance, pos.y};
+            case Direction.WEST do pos = Pos.{pos.x - distance, pos.y};
+        }
+    }
 }
 
 solve_part_2 :: () -> str {
-    __atomic_store(&initialised, 0);
     setupPart2();
     canvas.lock();
-    volume := calculateDigVolumePart2();
+    volume := calculateVolume();
     canvas.unlock();
     return toStr(volume);
 }
 
 
-MIN_INT := -2147483648;
-MAX_INT := 2147483647;
-
-render :: () {
+render :: (scale: i32, drawScale: i32) {
 
     canvas.lock();
 
@@ -440,91 +402,66 @@ render :: () {
 
         canvas.clear();
 
-        // Calculate the grid width and height
-        // minX := set.as_iter(&grid) |> iter.map((p) => p.pos.x) |> iter.fold(MAX_INT, (t, r) => math.min(t, r));
-        // minY := set.as_iter(&grid) |> iter.map((p) => p.pos.y) |> iter.fold(MAX_INT, (t, r) => math.min(t, r));
-
-        // maxX := set.as_iter(&grid) |> iter.map((p) => p.pos.x) |> iter.fold(MIN_INT, (t, r) => math.max(t, r));
-        // maxY := set.as_iter(&grid) |> iter.map((p) => p.pos.y) |> iter.fold(MIN_INT, (t, r) => math.max(t, r));
-
-
-        // Calculate the grid width and height
-        minX := iter.as_iter(&rects) |> iter.map((r) => r.pos1.x) |> iter.fold(MAX_INT, (t, r) => math.min(t, r));
-        minY := iter.as_iter(&rects) |> iter.map((r) => r.pos1.y) |> iter.fold(MAX_INT, (t, r) => math.min(t, r));
-
-        maxX := iter.as_iter(&rects) |> iter.map((r) => r.pos2.x) |> iter.fold(MIN_INT, (t, r) => math.max(t, r));
-        maxY := iter.as_iter(&rects) |> iter.map((r) => r.pos2.y) |> iter.fold(MIN_INT, (t, r) => math.max(t, r));
-
-        width := maxX - minX;
-        height := maxY - minY;
-
-        printf("width: {}, height: {}\n", width, height);
-
+        margin := 10;
 
         // Scale the instructions for the purposes of rendering
-        scaledInstructions := iter.as_iter(&instructions) |> iter.map((i) => Instruction.{i.direction, i.distance / scale, i.colour});
+        scaledInstructions := iter.as_iter(&instructions)
+            |> iter.map((i, [scale]) => Instruction.{i.direction, i.distance / scale, i.colour})
+            |> iter.to_array();
+        defer array.free(&scaledInstructions);
 
-        margin := 10;
-        scale := 16000;
+        rects := array.make(Rect);
+        defer array.free(&rects);
+        calculateRects(scaledInstructions, &rects);
 
-        // scaleX := (canvas.CANVAS_WIDTH - (margin * 2)) / (width + 1);
-        // scaleY := (canvas.CANVAS_HEIGHT - (margin * 2)) / (height + 1);
-        // drawScale := math.min(scaleX, scaleY);
-        drawScale := 1;
+        minX, minY, maxX, maxY := calculateMinMax(scaledInstructions);
 
         rectsSorted := array.copy(rects);
         array.quicksort(rectsSorted, (r1, r2) => r1.pos1.y - r2.pos1.y);
 
+        // Draw the rects
         for rect: rectsSorted {
-            posX := margin + (rect.pos1.x - minX) / scale * drawScale;
-            posY := margin + (rect.pos1.y - minY) / scale * drawScale;
-            width := cast(i32) math.ceil(cast(f64) (rect.pos2.x - rect.pos1.x) / cast(f64) scale) * drawScale;
-            height := cast(i32) math.ceil(cast(f64) (rect.pos2.y - rect.pos1.y) / cast(f64) scale) * drawScale;
+            posX := margin + (rect.pos1.x - minX) * drawScale;
+            posY := margin + (rect.pos1.y - minY) * drawScale;
+            width := (rect.pos2.x - rect.pos1.x) * drawScale;
+            height := (rect.pos2.y - rect.pos1.y) * drawScale;
             canvas.drawRect(posX, posY, width, height, rect.colour);
-            printf("draw rect: {}, {}, {}, {}, {}\n", posX, posY, width, height, rect.colour);
         }
 
-        // Draw all the excavated squares
-        // for square: set.as_iter(&grid) {
-        //     posX := margin + (square.pos.x - minX) * scale;
-        //     posY := margin + (square.pos.y - minY) * scale;
-
-        //     canvas.drawRect(posX, posY, scale, scale, square.colour);
-        // }
-
-
+        // Draw the edges
         pos := Pos.{0, 0};
-        for instruction: instructions {
+        for instruction: scaledInstructions {
+            // printf("Drawing instruction: {}\n", instruction);
             distance := instruction.distance;
             switch instruction.direction {
                 case Direction.NORTH {
-                    posX := margin + (pos.x - minX) / scale;
-                    posY := margin + ((pos.y - distance) - minY) / scale;
+                    posX := margin + (pos.x - minX) * drawScale;
+                    posY := margin + ((pos.y - distance) - minY) * drawScale;
                     width := drawScale;
-                    height := distance / scale;
+                    height := distance * drawScale;
                     canvas.drawRect(posX, posY, width, height, instruction.colour);
                     pos = Pos.{pos.x, pos.y - distance};
                 }
                 case Direction.SOUTH {
-                    posX := margin + (pos.x - minX) / scale;
-                    posY := margin + (pos.y - minY) / scale;
+                    posX := margin + (pos.x - minX) * drawScale;
+                    posY := margin + (pos.y - minY) * drawScale;
                     width := drawScale;
-                    height := distance / scale;
+                    height := distance * drawScale;
                     canvas.drawRect(posX, posY, width, height, instruction.colour);
                     pos = Pos.{pos.x, pos.y + distance};
                 }
                 case Direction.EAST {
-                    posX := margin + (pos.x - minX) / scale;
-                    posY := margin + (pos.y - minY) / scale;
-                    width := distance / scale;
+                    posX := margin + (pos.x - minX) * drawScale;
+                    posY := margin + (pos.y - minY) * drawScale;
+                    width := distance * drawScale;
                     height := drawScale;
                     canvas.drawRect(posX, posY, width, height, instruction.colour);
                     pos = Pos.{pos.x + distance, pos.y};
                 }
                 case Direction.WEST {
-                    posX := margin + ((pos.x - distance) - minX) / scale;
-                    posY := margin + (pos.y - minY) / scale ;
-                    width := distance / scale;
+                    posX := margin + ((pos.x - distance) - minX) * drawScale;
+                    posY := margin + (pos.y - minY) * drawScale;
+                    width := distance * drawScale;
                     height := drawScale;
                     canvas.drawRect(posX, posY, width, height, instruction.colour);
                     pos = Pos.{pos.x - distance, pos.y};
@@ -533,12 +470,22 @@ render :: () {
         }
 
         // Show the starting position
-        posX := margin + (0 - minX / scale) * drawScale;
-        posY := margin + (0 - minY / scale) * drawScale;
+        posX := margin + (0 - minX) * drawScale;
+        posY := margin + (0 - minY) * drawScale;
         canvas.drawRect(posX, posY, 5, 5, Colour.{255, 0, 0, 255});
-
     }
 
-
     canvas.unlock();
+}
+
+reset :: () {
+    __atomic_store(&initialised, 0);
+}
+
+render_part_1 :: () {
+    render(1, 2);
+}
+
+render_part_2 :: () {
+    render(16000, 1);
 }

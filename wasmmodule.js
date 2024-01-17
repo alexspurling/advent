@@ -1,3 +1,5 @@
+let wasmModule;
+
 const decodeOnyxString = (memory, ptr, len) => {
     let v = new DataView(memory.buffer);
 
@@ -7,17 +9,18 @@ const decodeOnyxString = (memory, ptr, len) => {
     }
 
     return s;
-  }
+}
 
 const logOnyxString = (memory, ptr, len) => {
-    console.log(decodeOnyxString(memory, ptr, len));
+    const stringToLog = decodeOnyxString(memory, ptr, len);
+    console.log(performance.now(), stringToLog, ptr, len);
+    wasmModule.instance.exports.printCallback();
 }
 
 const getOnyxString = (memory, str) => {
     let view = new DataView(memory.buffer);
     let strptr = view.getUint32(str, true);
     let strlen = view.getUint32(str + 4, true);
-
     return decodeOnyxString(memory, strptr, strlen);
 }
 
@@ -40,14 +43,13 @@ const loadWasmModule = async (wasmModuleUrl, memory) => {
         }
     };
 
-    return await WebAssembly.instantiateStreaming(
+    wasmModule = await WebAssembly.instantiateStreaming(
         fetch(wasmModuleUrl),
         importObject
     );
+    return wasmModule;
 }
 
 const loadWasmInstance = async (wasmModuleUrl, memory) => {
-    let wasmModule = await loadWasmModule(wasmModuleUrl, memory);
-    return wasmModule.instance;
+    return (await loadWasmModule(wasmModuleUrl, memory)).instance;
 }
-
