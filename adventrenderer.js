@@ -6,7 +6,7 @@ let renderMemory;
 onmessage = async (e) => {
     if (e.data.msg === "init") {
         renderMemory = e.data.memory;
-        renderWasmInstance = await loadWasmInstance("advent.wasm", renderMemory);
+        renderWasmInstance = await loadWasmInstance("advent.wasm", renderMemory, 1);
         // TODO figure out where / when this should be called. If both threads call it, then only the last one will be able to called printf()
         // initOnyx(wasmInstance);
         renderWasmInstance.exports._initialize();

@@ -11,9 +11,9 @@ const decodeOnyxString = (memory, ptr, len) => {
     return s;
 }
 
-const logOnyxString = (memory, ptr, len) => {
-    const stringToLog = decodeOnyxString(memory, ptr, len);
-    console.log(performance.now(), stringToLog, ptr, len);
+const logOnyxString = (memory, ptr, len, threadId) => {
+    const stringToLog = decodeOnyxString(memory, ptr, len).trim();
+    console.log(performance.now().toFixed(2) + " [" + threadId + "]", stringToLog);
     wasmModule.instance.exports.printCallback();
 }
 
@@ -28,10 +28,10 @@ const onyxKillThread = () => {
     console.log("Worker thread killed");
 }
 
-const loadWasmModule = async (wasmModuleUrl, memory) => {
+const loadWasmModule = async (wasmModuleUrl, memory, threadId) => {
     let importObject = {
         host: {
-            print_str: (ptr, len) => logOnyxString(memory, ptr, len),
+            print_str: (ptr, len) => logOnyxString(memory, ptr, len, threadId),
             time: Date.now,
             kill_thread: onyxKillThread,
             progress: (p) => {
@@ -50,6 +50,6 @@ const loadWasmModule = async (wasmModuleUrl, memory) => {
     return wasmModule;
 }
 
-const loadWasmInstance = async (wasmModuleUrl, memory) => {
-    return (await loadWasmModule(wasmModuleUrl, memory)).instance;
+const loadWasmInstance = async (wasmModuleUrl, memory, threadId) => {
+    return (await loadWasmModule(wasmModuleUrl, memory, threadId)).instance;
 }
