@@ -1,123 +1,20 @@
-use core {printf}
+use core {println}
 
 #load_all "./solutions"
 use day0
-use day1
-use day2
-use day3
-use day4
-use day5
-use day6
-use day7
-use day8
-use day9
-use day10
-use day11
-use day12
-use day13
-use day14
-use day15
-use day16
-use day17
-use day18
-
-#export "describe" describe
-describe :: (day: i32) -> &str {
-    switch day {
-        case 1 do return &day1.desc;
-        case 2 do return &day2.desc;
-        case 3 do return &day3.desc;
-        case 4 do return &day4.desc;
-        case 5 do return &day5.desc;
-        case 6 do return &day6.desc;
-        case 7 do return &day7.desc;
-        case 8 do return &day8.desc;
-        case 9 do return &day9.desc;
-        case 10 do return &day10.desc;
-        case 11 do return &day11.desc;
-        case 12 do return &day12.desc;
-        case 13 do return &day13.desc;
-        case 14 do return &day14.desc;
-        case 15 do return &day15.desc;
-        case 16 do return &day16.desc;
-        case 17 do return &day17.desc;
-        case 18 do return &day18.desc;
-    }
-}
-
-
-DayPart :: struct {day, part: i32;};
-#operator == (d1, d2: DayPart) => d1.day == d2.day && d1.part == d2.part;
 
 
 #export "solve" solve
-solve :: (day: i32, part: i32) -> &str {
-    solution: str;
-    switch DayPart.{day, part} {
-        case .{0, 1} do solution = day0.solve();
-        case .{0, 2} do solution = day0.solve();
-        case .{1, 1} do solution = day1.solve_part_1();
-        case .{1, 2} do solution = day1.solve_part_2();
-        case .{2, 1} do solution = day2.solve_part_1();
-        case .{2, 2} do solution = day2.solve_part_2();
-        case .{3, 1} do solution = day3.solve_part_1();
-        case .{3, 2} do solution = day3.solve_part_2();
-        case .{4, 1} do solution = day4.solve_part_1();
-        case .{4, 2} do solution = day4.solve_part_2();
-        case .{5, 1} do solution = day5.solve_part_1();
-        case .{5, 2} do solution = day5.solve_part_2();
-        case .{6, 1} do solution = day6.solve_part_1();
-        case .{6, 2} do solution = day6.solve_part_2();
-        case .{7, 1} do solution = day7.solve_part_1();
-        case .{7, 2} do solution = day7.solve_part_2();
-        case .{8, 1} do solution = day8.solve_part_1();
-        case .{8, 2} do solution = day8.solve_part_2();
-        case .{9, 1} do solution = day9.solve_part_1();
-        case .{9, 2} do solution = day9.solve_part_2();
-        case .{10, 1} do solution = day10.solve_part_1();
-        case .{10, 2} do solution = day10.solve_part_2();
-        case .{11, 1} do solution = day11.solve_part_1();
-        case .{11, 2} do solution = day11.solve_part_2();
-        case .{12, 1} do solution = day12.solve_part_1();
-        case .{12, 2} do solution = day12.solve_part_2();
-        case .{13, 1} do solution = day13.solve_part_1();
-        case .{13, 2} do solution = day13.solve_part_2();
-        case .{14, 1} do solution = day14.solve_part_1();
-        case .{14, 2} do solution = day14.solve_part_2();
-        case .{15, 1} do solution = day15.solve_part_1();
-        case .{15, 2} do solution = day15.solve_part_2();
-        case .{16, 1} do solution = day16.solve_part_1();
-        case .{16, 2} do solution = day16.solve_part_2();
-        case .{17, 1} do solution = day17.solve_part_1();
-        case .{17, 2} do solution = day17.solve_part_2();
-        case .{18, 1} do solution = day18.solve_part_1();
-        case .{18, 2} do solution = day18.solve_part_2();
-    }
-    return &solution;
-    // solution := "the solution";
-    // return &solution;
+solve :: () -> i32 {
+    return day0.solve();
 }
 
 #export "render" render
 render :: (day: i32, part: i32) {
     context.thread_id = 1;
-    switch DayPart.{day, part} {
-        case .{0, 1} do day0.render();
-        case .{0, 2} do day0.render();
-        case .{17, 1} do day17.render();
-        case .{17, 2} do day17.render();
-        case .{18, 1} do day18.render_part_1();
-        case .{18, 2} do day18.render_part_2();
-    }
-}
-
-#export "reset" reset
-reset :: (day: i32) {
-    switch day {
-        case 18 do day18.reset();
-    }
+    day0.render();
 }
 
 main :: () {
-    printf("Solution: {}\n", *solve(18, 1));
+    println(day0.solve());
 }

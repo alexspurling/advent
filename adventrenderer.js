@@ -7,23 +7,16 @@ onmessage = async (e) => {
     if (e.data.msg === "init") {
         renderMemory = e.data.memory;
         renderWasmInstance = await loadWasmInstance("advent.wasm", renderMemory, 1);
-        // TODO figure out where / when this should be called. If both threads call it, then only the last one will be able to called printf()
-        // initOnyx(wasmInstance);
         renderWasmInstance.exports._initialize();
 
-        const canvasRef = {
-            canvasSize: renderWasmInstance.exports.getCanvasSize(),
-            canvasPointer: renderWasmInstance.exports.getCanvasPointer()
-        };
-        postMessage({msg: "initialised", canvasRef});
+        // const canvasRef = {
+        //     canvasSize: renderWasmInstance.exports.getCanvasSize(),
+        //     canvasPointer: renderWasmInstance.exports.getCanvasPointer()
+        // };
+        postMessage({msg: "initialised"});
     } else if (e.data.msg === "render") {
-        const day = e.data.day;
-        const part = e.data.part;
-        renderWasmInstance.exports.render(day, part);
-        postMessage({msg: "rendered", day, part});
-    } else if (e.data.msg === "reset") {
-        const day = e.data.day;
-        renderWasmInstance.exports.reset(day);
+        renderWasmInstance.exports.render();
+        postMessage({msg: "rendered"});
     } else {
         console.log("Received unknown message", e.data);
     }

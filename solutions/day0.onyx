@@ -1,8 +1,23 @@
 package day0
 
 use core {printf}
-use strings {toStr}
-use canvas
+use core.intrinsics.atomics {__atomic_wait, __atomic_notify, __atomic_cmpxchg, __atomic_store}
+
+
+mutex := 0;
+lock :: () {
+    // Wait until the mutex is 0 as that means it's safe to render or update the game state
+    // If it is 0 then set the value to 1 and exit the loop
+    while __atomic_cmpxchg(&mutex, 0, 1) != 0 {
+        __atomic_wait(&mutex, 1);
+    }
+}
+
+unlock :: () {
+    // Set the mutex back to 0 and notify any threads that are waiting
+    __atomic_store(&mutex, 0);
+    __atomic_notify(&mutex);
+}
 
 
 Pos :: struct {
@@ -10,9 +25,9 @@ Pos :: struct {
     y: i32;
 }
 
-
-solve :: () -> str {
-    canvas.lock();
+// Executes on thread 0
+solve :: () -> i32 {
+    lock();
     printf("Starting solve\n");
 
     numIterations := 0;
@@ -24,19 +39,22 @@ solve :: () -> str {
 
         numIterations += 1;
 
-        canvas.unlock();
-        canvas.lock();
+        // Yield to the render thread. Commenting out these two lines will let solve complete successfully
+        // but prevents the render thread from doing anything while the solve is in progress
+        unlock();
+        lock();
     }
 
     printf("Finished solve. num iterations: {}, final pos: {}\n", numIterations, curPos);
-    canvas.unlock();
+    unlock();
 
-    return toStr(curPos.x);
+    return curPos.x;
 }
 
+// Executes on thread 1
 render :: () {
 
-    canvas.lock();
+    lock();
     printf("Starting render\n");
 
     for i: 0 .. 10000 {
@@ -44,5 +62,5 @@ render :: () {
     }
 
     printf("Finished render\n");
-    canvas.unlock();
+    unlock();
 }

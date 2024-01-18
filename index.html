@@ -13,60 +13,16 @@
         margin-left: auto;
         margin-right: auto;
     }
-    .header {
-        padding: 0.1rem 2rem 0.1rem 2rem;
-    }
     h1 {
         font-size: 3rem;
         font-weight: 100;
         font-family: "Segoe UI","Helvetica Neue",Arial,sans-serif;
         color: whitesmoke;
     }
-    h2 {
-        font-weight: 100;
-        display: inline-block;
-    }
-    .calendar {
-        position: relative;
-    }
-    .blockselect {
-        user-select: none;
-    }
-    .window {
-        position: absolute;
-        font-size: 3.2rem;
-        font-weight: 100;
-        font-family: "Gentium";
-        color: whitesmoke;
-        cursor: pointer;
-        width: 60px;
-        text-align: center;
-        opacity: 0.6;
-        transition: all 1s ease-out;
-        text-shadow: 1px 1px 5px #000000;
-    }
-    .window:hover {
-        opacity: 1;
-        transition: all 0.25s ease-in;
-        text-shadow: 1px 1px 5px #000000, 0 0 10px #ffee00;
-    }
     body {
         background-color: black;
         font-family: "Segoe UI","Helvetica Neue",Arial,sans-serif;
-    }
-
-    #window {
-        position: absolute;
-        top: 40px;
-        left: 100px;
-        background-color: rgba(92, 15, 15, 0.75);
-        border: 3px solid rgb(117, 9, 9);
-        border-radius: 5px;
-        padding: 0 30px 25px 30px;
         color: whitesmoke;
-        display: none;
-        margin: auto;
-        width: 750px;
     }
 
     a {
@@ -74,28 +30,6 @@
     }
     a:hover {
         color: #99ff99;
-    }
-    #snowcanvas {
-        position: absolute;
-        top: 0px;
-        left: 0px;
-        pointer-events: none;
-    }
-
-    #solutioncanvas {
-        background-color: #0f0f23;
-        border-radius: 5px;
-        opacity: 0.85;
-        position: relative;
-    }
-    .closebutton {
-        float: right;
-        font-size: 2.4rem;
-        font-weight: 50;
-        font-family: sans-serif;
-        margin-top: 20px;
-        cursor: pointer;
-        color: whitesmoke;
     }
     #resultsection {
         display: none;
@@ -106,42 +40,7 @@
 
 </style>
 <body class="container">
-    <div class="header">
-        <h1>Advent of Code 2023</h1>
-    </div>
-    <div class="calendar">
-        <div class="blockselect">
-            <img src="calendar.png">
-            <div class="window" style="top: 200px; left: 250px" onclick="return openWindow(0, true)">0</div>
-            <div class="window" style="top: 500px; left: 375px" onclick="return openWindow(1)">1</div>
-            <div class="window" style="top: 225px; left: 410px" onclick="return openWindow(2)">2</div>
-            <div class="window" style="top: 543px; left: 618px" onclick="return openWindow(3)">3</div>
-            <div class="window" style="top: 270px; left: 555px" onclick="return openWindow(4)">4</div>
-            <div class="window" style="top: 360px; left: 395px" onclick="return openWindow(5)">5</div>
-            <div class="window" style="top: 660px; left: 370px" onclick="return openWindow(6)">6</div>
-            <div class="window" style="top: 684px; left: 650px" onclick="return openWindow(7)">7</div>
-            <div class="window" style="top: 388px; left: 620px" onclick="return openWindow(8)">8</div>
-            <div class="window" style="top: 752px; left: 97px" onclick="return openWindow(9)">9</div>
-            <div class="window" style="top: 312px; left: 462px" onclick="return openWindow(10)">10</div>
-            <div class="window" style="top: 600px; left: 300px" onclick="return openWindow(11)">11</div>
-            <div class="window" style="top: 228px; left: 482px" onclick="return openWindow(12)">12</div>
-            <div class="window" style="top: 582px; left: 360px" onclick="return openWindow(13)">13</div>
-            <div class="window" style="top: 460px; left: 564px" onclick="return openWindow(14)">14</div>
-            <div class="window" style="top: 515px; left: 320px" onclick="return openWindow(15)">15</div>
-            <div class="window" style="top: 406px; left: 585px; font-size: 3rem" onclick="return openWindow(16)">16</div>
-            <div class="window" style="top: 525px; left: 865px" onclick="return openWindow(17, true)">17</div>
-            <div class="window" style="top: 520px; left: 495px" onclick="return openWindow(18, true)">18</div>
-        </div>
-        <div id="window">
-            <h2 id="day">Day 1</h2>
-            <a class="closebutton" onclick="return closeWindow()">&times;</a>
-            <p id="description">Calculate the calbration values for the trebuchet.</p>
-            <p>
-                <a href="#" id="part1">Part 1</a>&nbsp;<a href="#" id="part2">Part 2</a>&nbsp;<span id="resultsection">Result: <span id="result">12312</span></span>
-            </p>
-            <canvas id="solutioncanvas" width="750" height="750"></canvas>
-        </div>
-        <canvas id="snowcanvas" width="1024" height="1024"></canvas>
-    </div>
+    <h1>Advent of Code 2023</h1>
+    <a href="#" id="part1" onclick="solve()">Solve</a>&nbsp;<span id="resultsection">Result: <span id="result">12312</span></span>
 </body>
 </html>

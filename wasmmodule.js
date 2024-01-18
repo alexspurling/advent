@@ -14,7 +14,7 @@ const decodeOnyxString = (memory, ptr, len) => {
 const logOnyxString = (memory, ptr, len, threadId) => {
     const stringToLog = decodeOnyxString(memory, ptr, len).trim();
     console.log(performance.now().toFixed(2) + " [" + threadId + "]", stringToLog);
-    wasmModule.instance.exports.printCallback();
+    // wasmModule.instance.exports.printCallback();
 }
 
 const getOnyxString = (memory, str) => {
