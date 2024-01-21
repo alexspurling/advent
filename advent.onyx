@@ -19,6 +19,7 @@ use day15
 use day16
 use day17
 use day18
+use day19
 
 #export "describe" describe
 describe :: (day: i32) -> &str {
@@ -41,6 +42,7 @@ describe :: (day: i32) -> &str {
         case 16 do return &day16.desc;
         case 17 do return &day17.desc;
         case 18 do return &day18.desc;
+        case 19 do return &day19.desc;
     }
 }
 
@@ -89,6 +91,8 @@ solve :: (day: i32, part: i32) -> &str {
         case .{17, 2} do solution = day17.solve_part_2();
         case .{18, 1} do solution = day18.solve_part_1();
         case .{18, 2} do solution = day18.solve_part_2();
+        case .{19, 1} do solution = day19.solve_part_1();
+        case .{19, 2} do solution = day19.solve_part_2();
     }
     return &solution;
     // solution := "the solution";

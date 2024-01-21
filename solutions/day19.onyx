@@ -1,0 +1,272 @@
+package day19
+
+use core.array
+use core.string
+use core.iter
+use core.conv
+use core {printf}
+use core.map
+use strings {toStr}
+
+
+desc := "Process all the machine parts according to the workflows."
+
+
+Operator :: enum {
+    LT;
+    GT;
+}
+
+
+ImmediateAction :: enum {
+    ACCEPT;
+    REJECT;
+}
+
+Action :: union {
+    Immediate: ImmediateAction;
+    Defer: str;
+}
+
+BasicRule :: struct {
+    prop: u8;
+    operator: Operator;
+    value: i32;
+    action: Action;
+}
+
+Rule :: union {
+    Basic: BasicRule;
+    Action: Action;
+}
+
+getAction :: (input: str) -> Action {
+    if input == "A" {
+        return Action.{Immediate = ImmediateAction.ACCEPT};
+    } elseif input == "R" {
+        return Action.{Immediate = ImmediateAction.REJECT};
+    }
+    return Action.{Defer = input};
+}
+
+getRule :: (input: str) -> Rule {
+    if !string.contains(input, ':') {
+        return Rule.{Action = getAction(input)};
+    }
+
+    prop := input[0];
+    operator := Operator.LT if input[1] == '<' else Operator.GT;
+    valueAction := string.split(input[2 .. input.count], ':');
+    value := cast(i32) conv.parse_int(valueAction[0]);
+    action := getAction(valueAction[1]);
+
+    return Rule.{Basic = .{prop, operator, value, action}};
+}
+
+
+getRules :: (input: str) -> [] Rule {
+    return iter.as_iter(string.split(input, ','))
+            |> iter.map(getRule)
+            |> iter.to_array();
+}
+
+
+Flow :: struct {
+    name: str;
+    rules: [] Rule;
+}
+
+Part :: struct {
+    x: i32;
+    m: i32;
+    a: i32;
+    s: i32;
+}
+
+PartsAndFlows :: struct {
+    flows: Map(str, Flow);
+    parts: [] Part;
+}
+
+getFlows :: (input: str) -> Map(str, Flow) {
+    lines := string.split(input, '\n');
+
+    flows := map.make(str, Flow);
+    for line: lines {
+        nameAndRules := string.split(line, '{');
+        name := nameAndRules[0];
+
+        rules := getRules(nameAndRules[1][0 .. nameAndRules[1].count - 1]);
+
+        printf("Rules: {}\n", rules);
+
+        flow := Flow.{name, rules};
+        map.put(&flows, name, flow);
+    }
+
+    return flows;
+}
+
+getPart :: (input: str) -> Part {
+    x := 0;
+    m := 0;
+    a := 0;
+    s := 0;
+    props := input[1 .. input.count - 1];
+    for prop: string.split(props, ',') {
+        value := cast(i32) conv.parse_int(prop[2 .. prop.count]);
+        switch prop[0] {
+            case 'x' do x = value;
+            case 'm' do m = value;
+            case 'a' do a = value;
+            case 's' do s = value;
+        }
+    }
+    p := Part.{x, m, a, s};
+    printf("{}\n", p);
+    return p;
+}
+
+getParts :: (input: str) -> [] Part {
+    lines := string.split(input, '\n');
+
+    return iter.as_iter(string.split(input, '\n'))
+            |> iter.map(getPart)
+            |> iter.to_array();
+}
+
+getPartsAndFlows :: (input: str) -> PartsAndFlows {
+    input_split := string.split_iter(input, "\n\n");
+
+    flows_input, cont1 := iter.take_one(input_split);
+    parts_input, cont2 := iter.take_one(input_split);
+
+    flows := getFlows(flows_input);
+    parts := getParts(parts_input);
+
+    return PartsAndFlows.{flows, parts};
+}
+
+evalOperator :: (value1: i32, operator: Operator, value2: i32) -> bool {
+    switch operator {
+        case Operator.LT {
+            return value1 < value2;
+        }
+        case Operator.GT {
+            return value1 > value2;
+        }
+    }
+    return false;
+}
+
+evalRule :: (part: Part, rule: BasicRule) -> bool {
+    switch rule.prop {
+        case 'x' do return evalOperator(part.x, rule.operator, rule.value);
+        case 'm' do return evalOperator(part.m, rule.operator, rule.value);
+        case 'a' do return evalOperator(part.a, rule.operator, rule.value);
+        case 's' do return evalOperator(part.s, rule.operator, rule.value);
+    }
+    return false;
+}
+
+process :: (partsAndFlows: PartsAndFlows) -> i32 {
+
+    accepted := array.make(Part);
+
+    iterCount := 0;
+    for part: partsAndFlows.parts {
+        printf("Processing part: {}\n", part);
+        // Start with the "in" workflow
+        nextFlow := "in";
+        partProcessed := false;
+        while !partProcessed {
+            iterCount += 1;
+            printf("Getting flow: {}\n", nextFlow);
+            flow := map.get(&partsAndFlows.flows, nextFlow)->unwrap();
+            printf("Flow: {}\n", flow);
+            ruleProcessed := false;
+            for rule: flow.rules {
+                switch rule {
+                    case br: .Basic {
+                        printf("Basic rule: {}\n", br);
+                        if evalRule(part, br) {
+                            printf("Part {} matches rule: {}\n", part, br);
+                            switch br.action {
+                                case ia: .Immediate {
+                                    if ia == ImmediateAction.ACCEPT {
+                                        printf("Part accepted: {}\n", part);
+                                        accepted << part;
+                                    } else {
+                                        printf("Part rejected: {}\n", part);
+                                    }
+                                    partProcessed = true;
+                                }
+                                case d: .Defer {
+                                    nextFlow = d;
+                                }
+                            }
+                            ruleProcessed = true;
+                        } else {
+                            printf("Part {} does not match rule: {}\n", part, br);
+                        }
+                    }
+                    case a: .Action {
+                        printf("Action: {}\n", a);
+                        switch a {
+                            case ia: .Immediate {
+                                if ia == ImmediateAction.ACCEPT {
+                                    printf("Part accepted: {}\n", part);
+                                    accepted << part;
+                                } else {
+                                    printf("Part rejected: {}\n", part);
+                                }
+                                partProcessed = true;
+                            }
+                            case d: .Defer {
+                                nextFlow = d;
+                            }
+                        }
+                        ruleProcessed = true;
+                    }
+                }
+                if ruleProcessed {
+                    break;
+                }
+            }
+        }
+    }
+
+    return iter.as_iter(accepted)
+        |> iter.map(p => p.x + p.m + p.a + p.s)
+        |> iter.sum();
+}
+
+solve_part_1 :: () -> str {
+    input := #file_contents "inputs/day19.txt";
+    partsAndFlows := getPartsAndFlows(input);
+    sumAcceptedParts := process(partsAndFlows);
+    return toStr(sumAcceptedParts);
+}
+
+solve_part_2 :: () -> str {
+    return "";
+}
+
+
+exampleInput := """px{a<2006:qkq,m>2090:A,rfg}
+pv{a>1716:R,A}
+lnx{m>1548:A,A}
+rfg{s<537:gd,x>2440:R,A}
+qs{s>3448:A,lnx}
+qkq{x<1416:A,crn}
+crn{x>2662:A,R}
+in{s<1351:px,qqz}
+qqz{s>2770:qs,m<1801:hdj,R}
+gd{a>3333:R,R}
+hdj{m>838:A,pv}
+
+{x=787,m=2655,a=1222,s=2876}
+{x=1679,m=44,a=2067,s=496}
+{x=2036,m=264,a=79,s=2244}
+{x=2461,m=1339,a=466,s=291}
+{x=2127,m=1623,a=2188,s=1013}""";

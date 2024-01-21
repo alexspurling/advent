@@ -13,7 +13,7 @@ const decodeOnyxString = (memory, ptr, len) => {
 
 const logOnyxString = (memory, ptr, len) => {
     const stringToLog = decodeOnyxString(memory, ptr, len);
-    console.log(performance.now(), stringToLog, ptr, len);
+    console.log(performance.now(), stringToLog.trim());
     wasmModule.instance.exports.printCallback();
 }
 
