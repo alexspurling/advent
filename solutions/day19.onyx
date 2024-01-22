@@ -7,6 +7,7 @@ use core.conv
 use core {printf}
 use core.map
 use strings {toStr}
+use core.alloc
 
 
 desc := "Process all the machine parts according to the workflows."
@@ -51,7 +52,8 @@ getAction :: (input: str) -> Action {
 
 getRule :: (input: str) -> Rule {
     if !string.contains(input, ':') {
-        return Rule.{Action = getAction(input)};
+        a := getAction(input);
+        return Rule.{Action = a};
     }
 
     prop := input[0];
@@ -236,9 +238,10 @@ process :: (partsAndFlows: PartsAndFlows) -> i32 {
         }
     }
 
-    return iter.as_iter(accepted)
-        |> iter.map(p => p.x + p.m + p.a + p.s)
-        |> iter.sum();
+    // return iter.as_iter(accepted)
+    //     |> iter.map(p => p.x + p.m + p.a + p.s)
+    //     |> iter.sum();
+    return 0;
 }
 
 solve_part_1 :: () -> str {
@@ -248,9 +251,241 @@ solve_part_1 :: () -> str {
     return toStr(sumAcceptedParts);
 }
 
-solve_part_2 :: () -> str {
-    return "";
+#tag conv.Custom_Format.{ formatPartRanges }
+PartRanges :: struct {
+    x: [] bool;
+    m: [] bool;
+    a: [] bool;
+    s: [] bool;
 }
+
+
+formatRange :: (output: &conv.Format_Output, prop: u8, range: [] bool) {
+
+    conv.format(output, "\n  {}: [", prop);
+
+    rangeStart := -1;
+    rangeEnd := -1;
+
+    for i: 0 .. range.count {
+        if rangeStart == -1 && range[i] {
+            rangeStart = i;
+        } elseif rangeStart != -1 && !range[i] {
+            rangeEnd = i - 1;
+            conv.format(output, "{}-{}, ", rangeStart, rangeEnd);
+            rangeStart = -1;
+            rangeEnd = -1;
+        }
+    }
+    if rangeStart != -1 {
+        conv.format(output, "{}-{}", rangeStart, range.count - 1);
+    }
+
+    conv.format(output, "]");
+}
+
+
+formatPartRanges :: (output: &conv.Format_Output, format: &conv.Format, range: &PartRanges) {
+    conv.format(output, "PartsRanges{");
+    formatRange(output, 'x', range.x);
+    formatRange(output, 'm', range.m);
+    formatRange(output, 'a', range.a);
+    formatRange(output, 's', range.s);
+    conv.format(output, "\n}");
+}
+
+newRange :: (min: i32, max: i32) -> [] bool {
+    range := array.make(bool, capacity = max + 1);
+
+    for i: 0 .. min {
+        range << false;
+    }
+    for i: min .. max + 1 {
+        range << true;
+    }
+
+    return range;
+}
+
+newRanges :: () -> &PartRanges {
+    return alloc.on_heap(PartRanges.{
+        newRange(1, 4000),
+        newRange(1, 4000),
+        newRange(1, 4000),
+        newRange(1, 4000)
+    });
+}
+
+combineRange :: #match #local {}
+
+#overload
+combineRange :: (curRange: [] bool, newRange: [] bool) -> [] bool {
+    return combineRange(curRange, newRange, 0, curRange.count - 1);
+}
+
+#overload
+combineRange :: (curRange: [] bool, newRange: [] bool, min: i32, max: i32) -> [] bool {
+    // Make a copy of curRange
+    range := array.make(curRange);
+
+    // Add any new exclusions within the given range
+    for i: min .. max + 1 {
+        range[i] = curRange[i] && newRange[i];
+    }
+
+    return range;
+}
+
+combineRanges :: (curRanges: PartRanges, newRanges: PartRanges, rule: BasicRule) -> PartRanges {
+    x: [] bool;
+    m: [] bool;
+    a: [] bool;
+    s: [] bool;
+
+    min: i32;
+    max: i32;
+    if rule.operator == Operator.LT {
+        min = 1;
+        max = rule.value - 1;
+    } else {
+        min = rule.value + 1;
+        max = curRanges.x.count - 1;
+    }
+    if rule.prop == 'x' {
+        x = combineRange(curRanges.x, newRanges.x, min, max);
+    } else {
+        x = combineRange(curRanges.x, newRanges.x);
+    }
+    if rule.prop == 'm' {
+        m = combineRange(curRanges.x, newRanges.x, min, max);
+    } else {
+        m = combineRange(curRanges.x, newRanges.x);
+    }
+    if rule.prop == 'a' {
+        a = combineRange(curRanges.x, newRanges.x, min, max);
+    } else {
+        a = combineRange(curRanges.x, newRanges.x);
+    }
+    if rule.prop == 's' {
+        s = combineRange(curRanges.x, newRanges.x, min, max);
+    } else {
+        s = combineRange(curRanges.x, newRanges.x);
+    }
+
+    return PartRanges.{x, m, a, s};
+}
+
+excludeRanges :: #match #local {}
+
+#overload
+excludeRanges :: (curRanges: PartRanges, rule: BasicRule) {
+
+    rangeToUpdate : [] bool;
+    switch rule.prop {
+        case 'x' do rangeToUpdate = curRanges.x;
+        case 'm' do rangeToUpdate = curRanges.m;
+        case 'a' do rangeToUpdate = curRanges.a;
+        case 's' do rangeToUpdate = curRanges.s;
+    }
+
+    min: i32;
+    max: i32;
+    if rule.operator == Operator.LT {
+        min = 1;
+        max = rule.value + 1;
+    } else {
+        min = rule.value + 1;
+        max = rangeToUpdate.count - 1;
+    }
+
+    for i: min .. max {
+        rangeToUpdate[i] = false;
+    }
+}
+
+#overload
+excludeRanges :: (curRanges: PartRanges, rangesToExclude: PartRanges) {
+    for i: 0 .. curRanges.x.count {
+        curRanges.x[i] = curRanges.x[i] && !rangesToExclude.x[i];
+        curRanges.m[i] = curRanges.m[i] && !rangesToExclude.m[i];
+        curRanges.a[i] = curRanges.a[i] && !rangesToExclude.a[i];
+        curRanges.s[i] = curRanges.s[i] && !rangesToExclude.s[i];
+    }
+}
+
+getAcceptedPartRanges :: #match #local {}
+
+#overload
+getAcceptedPartRanges :: (flows: &Map(str, Flow)) -> PartRanges {
+    return getAcceptedPartRanges(flows, "in", *newRanges());
+}
+
+#overload
+getAcceptedPartRanges :: (flows: &Map(str, Flow), name: str, ranges: PartRanges) -> PartRanges {
+
+    printf("Processing flow {} with valid ranges: {}\n", name, ranges);
+    flow := map.get(flows, name)->unwrap();
+
+    // Use this to keep track of the ranges that the final workflow rule applies to
+    workflowRanges := *newRanges();
+
+    for rule: flow.rules {
+        switch rule {
+            case br: .Basic {
+                // printf("Applying rule: {}\n", br);
+                switch br.action {
+                    case ia: .Immediate {
+                        // If this is a reject rule, then we can constrain the allowed ranges
+                        if ia == ImmediateAction.REJECT {
+                            // Remove this range from existing ranges
+                            printf("Excluding ranges due to rule: {}\n", br);
+                            printf("Before ranges: {}\n", ranges);
+                            excludeRanges(ranges, br);
+                            printf("Updated ranges: {}\n", ranges);
+                            excludeRanges(workflowRanges, br);
+                            printf("Updated workflow ranges: {}\n", workflowRanges);
+                        }
+                    }
+                    case deferTo: .Defer {
+                        printf("Deferring to: {}\n", deferTo);
+                        deferredRanges := getAcceptedPartRanges(flows, deferTo, ranges);
+                        printf("Deferred to: {}\n", deferTo);
+                        // Combine ranges considering the rule
+                        ranges = combineRanges(ranges, deferredRanges, br);
+                        excludeRanges(workflowRanges, br);
+                    }
+                }
+            }
+            case a: .Action {
+                printf("Applying action: {}\n", a);
+                switch a {
+                    case ia: .Immediate {
+                        if ia == ImmediateAction.REJECT {
+                            // Reject all workflow ranges
+                            excludeRanges(ranges, workflowRanges);
+                        }
+                    }
+                    case deferTo: .Defer {
+                        ranges = getAcceptedPartRanges(flows, deferTo, ranges);
+                    }
+                }
+            }
+        }
+    }
+    return ranges;
+}
+
+solve_part_2 :: () -> str {
+    // input := #file_contents "inputs/day19.txt";
+    partsAndFlows := getPartsAndFlows(example);
+    acceptedParts := getAcceptedPartRanges(&partsAndFlows.flows);
+    printf("Final accepted ranges: {}\n", acceptedParts);
+    return toStr(0);
+}
+
+example := """in{s<1716:R,a<3500:R,A}
+
+""";
 
 
 exampleInput := """px{a<2006:qkq,m>2090:A,rfg}

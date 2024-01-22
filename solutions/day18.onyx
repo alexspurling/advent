@@ -1,9 +1,9 @@
 package day18
 
 use canvas
-use canvas {Colour}
+use canvas {Colour, printf}
 use core.set
-use common {Pos, Direction, printf}
+use common {Pos, Direction}
 use core.intrinsics.atomics {__atomic_wait, __atomic_notify, __atomic_cmpxchg, __atomic_store, __atomic_load}
 use core.conv {parse_int}
 use core.array

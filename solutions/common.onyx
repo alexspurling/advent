@@ -46,23 +46,3 @@ Direction.hash :: (d: Direction) -> u32 {
 hash.hash :: (d: Direction) -> u32 {
     return hash.hash(cast(u32) d);
 }
-
-
-printMutex := 0;
-
-// We need a mutex around print because it's not a thread-safe function
-printf :: (format: str, va: ..any) {
-    while __atomic_cmpxchg(&printMutex, 0, 1) != 0 {
-        __atomic_wait(&printMutex, 1);
-    }
-    buffer: [1024] u8;
-    str_to_print := conv.format_va(buffer, format, va);
-    print(str_to_print);
-}
-
-#export "printCallback" printCallback
-printCallback :: () {
-    // Set the mutex back to 0 and notify any threads that are waiting
-    __atomic_store(&printMutex, 0);
-    __atomic_notify(&printMutex);
-}

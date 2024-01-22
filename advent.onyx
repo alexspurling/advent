@@ -117,5 +117,5 @@ reset :: (day: i32) {
 }
 
 main :: () {
-    printf("Solution: {}\n", *solve(18, 1));
+    printf("Solution: {}\n", *solve(19, 2));
 }
