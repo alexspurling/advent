@@ -238,15 +238,14 @@ process :: (partsAndFlows: PartsAndFlows) -> i32 {
         }
     }
 
-    // return iter.as_iter(accepted)
-    //     |> iter.map(p => p.x + p.m + p.a + p.s)
-    //     |> iter.sum();
-    return 0;
+    return iter.as_iter(accepted)
+        |> iter.map(p => p.x + p.m + p.a + p.s)
+        |> iter.sum();
 }
 
 solve_part_1 :: () -> str {
-    input := #file_contents "inputs/day19.txt";
-    partsAndFlows := getPartsAndFlows(input);
+    // input := #file_contents "inputs/day19.txt";
+    partsAndFlows := getPartsAndFlows(exampleInput);
     sumAcceptedParts := process(partsAndFlows);
     return toStr(sumAcceptedParts);
 }
@@ -294,13 +293,11 @@ formatPartRanges :: (output: &conv.Format_Output, format: &conv.Format, range: &
     conv.format(output, "\n}");
 }
 
-newRange :: (min: i32, max: i32) -> [] bool {
+newRange :: (max: i32) -> [] bool {
     range := array.make(bool, capacity = max + 1);
 
-    for i: 0 .. min {
-        range << false;
-    }
-    for i: min .. max + 1 {
+    range << false; // We always want a false entry at index 0
+    for i: 0 .. max {
         range << true;
     }
 
@@ -309,38 +306,46 @@ newRange :: (min: i32, max: i32) -> [] bool {
 
 newRanges :: () -> &PartRanges {
     return alloc.on_heap(PartRanges.{
-        newRange(1, 4000),
-        newRange(1, 4000),
-        newRange(1, 4000),
-        newRange(1, 4000)
+        newRange(4000),
+        newRange(4000),
+        newRange(4000),
+        newRange(4000)
     });
+}
+
+copyRanges :: (ranges: PartRanges) -> &PartRanges {
+    rangesCopy := newRanges();
+
+    for i: 0 .. rangesCopy.x.count {
+        rangesCopy.x[i] = ranges.x[i];
+        rangesCopy.m[i] = ranges.m[i];
+        rangesCopy.a[i] = ranges.a[i];
+        rangesCopy.s[i] = ranges.s[i];
+    }
+
+    return rangesCopy;
 }
 
 combineRange :: #match #local {}
 
 #overload
-combineRange :: (curRange: [] bool, newRange: [] bool) -> [] bool {
-    return combineRange(curRange, newRange, 0, curRange.count - 1);
+combineRange :: (curRange: [] bool, newRange: [] bool) {
+    combineRange(curRange, newRange, 0, curRange.count - 1);
 }
 
 #overload
-combineRange :: (curRange: [] bool, newRange: [] bool, min: i32, max: i32) -> [] bool {
-    // Make a copy of curRange
-    range := array.make(curRange);
-
+combineRange :: (curRange: [] bool, newRange: [] bool, min: i32, max: i32) {
     // Add any new exclusions within the given range
     for i: min .. max + 1 {
-        range[i] = curRange[i] && newRange[i];
+        curRange[i] = curRange[i] && newRange[i];
     }
-
-    return range;
 }
 
-combineRanges :: (curRanges: PartRanges, newRanges: PartRanges, rule: BasicRule) -> PartRanges {
-    x: [] bool;
-    m: [] bool;
-    a: [] bool;
-    s: [] bool;
+combineRanges :: (curRanges: PartRanges, newRanges: PartRanges, rule: BasicRule) {
+    // x: [] bool = newRange(4000);
+    // m: [] bool = newRange(4000);
+    // a: [] bool = newRange(4000);
+    // s: [] bool = newRange(4000);
 
     min: i32;
     max: i32;
@@ -352,27 +357,27 @@ combineRanges :: (curRanges: PartRanges, newRanges: PartRanges, rule: BasicRule)
         max = curRanges.x.count - 1;
     }
     if rule.prop == 'x' {
-        x = combineRange(curRanges.x, newRanges.x, min, max);
+        combineRange(curRanges.x, newRanges.x, min, max);
     } else {
-        x = combineRange(curRanges.x, newRanges.x);
+        combineRange(curRanges.x, newRanges.x);
     }
     if rule.prop == 'm' {
-        m = combineRange(curRanges.x, newRanges.x, min, max);
+        combineRange(curRanges.m, newRanges.m, min, max);
     } else {
-        m = combineRange(curRanges.x, newRanges.x);
+        combineRange(curRanges.m, newRanges.m);
     }
     if rule.prop == 'a' {
-        a = combineRange(curRanges.x, newRanges.x, min, max);
+        combineRange(curRanges.a, newRanges.a, min, max);
     } else {
-        a = combineRange(curRanges.x, newRanges.x);
+        combineRange(curRanges.a, newRanges.a);
     }
     if rule.prop == 's' {
-        s = combineRange(curRanges.x, newRanges.x, min, max);
+        combineRange(curRanges.s, newRanges.s, min, max);
     } else {
-        s = combineRange(curRanges.x, newRanges.x);
+        combineRange(curRanges.s, newRanges.s);
     }
 
-    return PartRanges.{x, m, a, s};
+    printf("New combined ranges: {}\n", curRanges);
 }
 
 excludeRanges :: #match #local {}
@@ -392,13 +397,13 @@ excludeRanges :: (curRanges: PartRanges, rule: BasicRule) {
     max: i32;
     if rule.operator == Operator.LT {
         min = 1;
-        max = rule.value + 1;
+        max = rule.value - 1;
     } else {
         min = rule.value + 1;
         max = rangeToUpdate.count - 1;
     }
 
-    for i: min .. max {
+    for i: min .. max + 1 {
         rangeToUpdate[i] = false;
     }
 }
@@ -420,19 +425,28 @@ getAcceptedPartRanges :: (flows: &Map(str, Flow)) -> PartRanges {
     return getAcceptedPartRanges(flows, "in", *newRanges());
 }
 
-#overload
-getAcceptedPartRanges :: (flows: &Map(str, Flow), name: str, ranges: PartRanges) -> PartRanges {
+oppositeRule :: (basicRule: BasicRule) -> BasicRule {
+    if basicRule.operator == Operator.LT {
+        return BasicRule.{basicRule.prop, Operator.GT, basicRule.value - 1, basicRule.action};
+    } else {
+        return BasicRule.{basicRule.prop, Operator.LT, basicRule.value + 1, basicRule.action};
+    }
+}
 
-    printf("Processing flow {} with valid ranges: {}\n", name, ranges);
+#overload
+getAcceptedPartRanges :: (flows: &Map(str, Flow), name: str, inRanges: PartRanges) -> PartRanges {
+
+    printf("Processing flow {} with valid ranges: {}\n", name, inRanges);
     flow := map.get(flows, name)->unwrap();
 
     // Use this to keep track of the ranges that the final workflow rule applies to
     workflowRanges := *newRanges();
+    ranges := *copyRanges(inRanges);
 
     for rule: flow.rules {
         switch rule {
             case br: .Basic {
-                // printf("Applying rule: {}\n", br);
+                printf("Applying rule: {}\n", br);
                 switch br.action {
                     case ia: .Immediate {
                         // If this is a reject rule, then we can constrain the allowed ranges
@@ -442,17 +456,25 @@ getAcceptedPartRanges :: (flows: &Map(str, Flow), name: str, ranges: PartRanges)
                             printf("Before ranges: {}\n", ranges);
                             excludeRanges(ranges, br);
                             printf("Updated ranges: {}\n", ranges);
-                            excludeRanges(workflowRanges, br);
+
+                            printf("Workflow ranges: {}\n", workflowRanges);
+                            oppoRule := oppositeRule(br);
+                            printf("Excluding ranges from workflow ranges according to opposite rule {}\n", oppoRule);
+                            excludeRanges(workflowRanges, oppoRule);
                             printf("Updated workflow ranges: {}\n", workflowRanges);
                         }
                     }
                     case deferTo: .Defer {
-                        printf("Deferring to: {}\n", deferTo);
+                        printf("Deferring according to rule: {}\n", br);
                         deferredRanges := getAcceptedPartRanges(flows, deferTo, ranges);
-                        printf("Deferred to: {}\n", deferTo);
+                        printf("Deferred ranges: {}\n", deferredRanges);
                         // Combine ranges considering the rule
-                        ranges = combineRanges(ranges, deferredRanges, br);
+                        printf("Combining with: {}\n", ranges);
+                        combineRanges(ranges, deferredRanges, br);
+                        printf("Combined ranges: {}\n", ranges);
+                        printf("Workflow ranges: {}\n", workflowRanges);
                         excludeRanges(workflowRanges, br);
+                        printf("Excluded workflow ranges: {}\n", workflowRanges);
                     }
                 }
             }
@@ -477,16 +499,18 @@ getAcceptedPartRanges :: (flows: &Map(str, Flow), name: str, ranges: PartRanges)
 
 solve_part_2 :: () -> str {
     // input := #file_contents "inputs/day19.txt";
-    partsAndFlows := getPartsAndFlows(example);
+    partsAndFlows := getPartsAndFlows(exampleInput);
     acceptedParts := getAcceptedPartRanges(&partsAndFlows.flows);
     printf("Final accepted ranges: {}\n", acceptedParts);
-    return toStr(0);
+
+    return "";
 }
 
-example := """in{s<1716:R,a<3500:R,A}
+// example := """in{s<1716:qqz,s<100:bum,a<3500:R,A}
+// qqz{x>2770:R,m<1801:R,A}
+// bum{R}
 
-""";
-
+// """;
 
 exampleInput := """px{a<2006:qkq,m>2090:A,rfg}
 pv{a>1716:R,A}
